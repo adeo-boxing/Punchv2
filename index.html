@@ -181,7 +181,13 @@
             font-size: 1.1rem;
             color: #ffcc00;
             font-weight: 500;
-            margin: 15px 0;
+            margin: 15px 0 5px 0;
+        }
+
+        #moniteurDirect {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 15px;
         }
 
         /* Style de l'accordéon natif */
@@ -254,6 +260,8 @@
         </div>
 
         <p id="statut">Capteur BWT901CL non connecté.</p>
+        <div id="moniteurDirect">Direct : <span id="valeurDirect" style="color: #ffcc00; font-weight: bold;">0.0</span> m/s²</div>
+        
         <button id="btnBluetooth" class="ble-btn">CONNECTER BWT901CL</button>
         <button id="btnConfiguration" disabled>DÉMARRER</button>
     </div>
@@ -353,6 +361,7 @@
         const affichageReaction = document.getElementById('affichageReaction');
         const affichageRecord = document.getElementById('affichageRecord');
         const subRecordAcc = document.getElementById('subRecordAcc');
+        const valeurDirect = document.getElementById('valeurDirect');
         
         const listeHistorique = document.getElementById('listeHistorique');
         const statut = document.getElementById('statut');
@@ -378,7 +387,7 @@
             } else if (e.target.value === 'mur') {
                 dureeFenetreImpact = 30;     
                 tempsAttenteAntiRebond = 500;  
-                slider.value = 10; // Légèrement plus sensible par défaut pour le mur          
+                slider.value = 10;          
                 inputMasse.value = "1.5";
             }
             seuilDetection = parseFloat(slider.value);
@@ -464,6 +473,7 @@
         function onBluetoothDisconnected() {
             statut.innerText = "Capteur déconnecté.";
             statut.style.color = "#ff3366";
+            valeurDirect.innerText = "0.0";
             btnBluetooth.innerText = "CONNECTER BWT901CL";
             btnBluetooth.classList.remove('ble-connecte');
             btnConfig.disabled = true;
@@ -481,11 +491,7 @@
                 decodageBuffer.push(value.getUint8(i));
             }
 
-            if (!systemeActif) {
-                decodageBuffer = [];
-                return;
-            }
-
+            // On traite le buffer même si le système est en veille pour faire fonctionner le moniteur de flux direct
             while (decodageBuffer.length >= 2) {
                 if (decodageBuffer[0] !== 0x55) {
                     decodageBuffer.shift();
@@ -508,7 +514,7 @@
                     if (decodageBuffer.length < 11) break; 
 
                     const axRaw = convertirEnInt16(decodageBuffer[2], decodageBuffer[3]);
-                    const ayRaw = convertirEnInt16(convertirEnInt16(decodageBuffer[4], decodageBuffer[5]));
+                    const ayRaw = convertirEnInt16(decodageBuffer[4], decodageBuffer[5]); // REPARÉ : Correction de la double imbrication
                     const azRaw = convertirEnInt16(decodageBuffer[6], decodageBuffer[7]);
 
                     analyserAccelerationBrute(axRaw, ayRaw, azRaw);
@@ -533,6 +539,12 @@
 
             let forceLineaire = magnitudeTotale - 9.80665;
             if (forceLineaire < 0) forceLineaire = 0;
+
+            // Affichage de contrôle en temps réel (limité à 1 chiffre après la virgule pour la lisibilité)
+            valeurDirect.innerText = forceLineaire.toFixed(1);
+
+            // Si l'acquisition globale n'est pas activée, on s'arrête là
+            if (!systemeActif) return;
 
             traiterAnalyseImpact(forceLineaire);
         }
@@ -567,12 +579,10 @@
                     }
 
                     setTimeout(() => {
-                        // CONVERSION EN KILOS ARRONDIE : F = (m * a) / 9.80665
                         let forceKilosBrute = (masseImpact * maxImpact) / 9.80665;
                         let scoreKgArrondi = Math.round(forceKilosBrute);
                         let accArrondie = Math.round(maxImpact);
 
-                        // Affichage à l'écran
                         affichageScore.innerHTML = `${scoreKgArrondi}<span style="font-size:1.2rem; color:#888; font-weight:normal;"> kg</span>`;
                         subScoreAcc.innerText = `${accArrondie} m/s²`;
                         
@@ -582,7 +592,6 @@
                             affichageReaction.innerText = "-.---s";
                         }
                         
-                        // Gestion du Record en Kilos
                         if (scoreKgArrondi > recordSessionKg) {
                             recordSessionKg = scoreKgArrondi;
                             affichageRecord.innerHTML = `${recordSessionKg}<span style="font-size:1.2rem; color:#888; font-weight:normal;"> kg</span>`;
@@ -592,7 +601,6 @@
                             if (modeActuel !== 'combo') annoncerTexte(scoreKgArrondi + " kilos");
                         }
 
-                        // Enregistrement historique complet
                         compteurCoups++;
                         historiqueCoups.unshift({
                             numero: compteurCoups,
