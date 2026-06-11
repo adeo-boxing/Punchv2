@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PunchMeter Pro - WebRTC P2P</title>
-    <script src="/socket.io/socket.io.js"></script>
+    <title>PunchMeter Pro - Mobile & BWT901CL</title>
     <style>
+        /* Base de la page adaptée au tactile */
         body { 
             font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; 
             text-align: center; 
@@ -16,6 +16,8 @@
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
         }
+
+        /* Cartes responsives */
         .card { 
             background: #1e1e1e; 
             padding: 20px 15px; 
@@ -26,154 +28,301 @@
             border: 1px solid #2a2a2a; 
             box-sizing: border-box;
         }
-        h1 { color: #00ffcc; margin-top: 0; font-size: 1.8rem; }
-        h3 { margin-top: 0; font-size: 1.2rem; color: #aaa; }
+
+        h1 { 
+            color: #00ffcc; 
+            margin-top: 0; 
+            font-size: 1.8rem; 
+        }
+
+        h3 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            color: #aaa;
+        }
         
-        .stats-container { display: flex; justify-content: space-between; align-items: center; margin: 25px 0; gap: 5px; }
-        .score-box { flex: 1; padding: 5px 2px; }
-        .score-label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
-        .score { font-size: 2.8rem; font-weight: bold; color: #ff3366; line-height: 1.1; }
-        .record { font-size: 2.4rem; font-weight: bold; color: #ffcc00; line-height: 1.1; }
-        .reaction-val { font-size: 2.4rem; font-weight: bold; color: #00ffcc; line-height: 1.1; }
+        /* Conteneur de stats ajusté pour 3 colonnes */
+        .stats-container { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin: 25px 0; 
+            gap: 5px;
+        }
 
-        label { display: block; margin: 18px 0 8px; font-weight: bold; text-align: left; font-size: 1rem; }
-        select { width: 100%; padding: 14px; font-size: 1rem; border-radius: 8px; border: none; background: #2a2a2a; color: white; box-sizing: border-box; appearance: none; }
-        input[type="range"] { width: 100%; margin: 15px 0; height: 8px; border-radius: 5px; background: #2a2a2a; }
+        .score-box { 
+            flex: 1; 
+            padding: 5px 2px;
+        }
 
-        button { background: #00ffcc; color: #121212; border: none; padding: 18px 30px; font-size: 1.2rem; font-weight: bold; border-radius: 12px; cursor: pointer; width: 100%; box-shadow: 0 4px 10px rgba(0, 255, 204, 0.2); transition: background 0.2s, color 0.2s; }
-        button.actif { background: #ff3366; color: white; box-shadow: 0 4px 10px rgba(255, 51, 102, 0.2); }
-        button:active { transform: scale(0.98); }
+        .score-label { 
+            font-size: 0.75rem; 
+            color: #888; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            margin-bottom: 5px;
+        }
+
+        /* Chiffres sans virgules */
+        .score { 
+            font-size: 2.8rem; 
+            font-weight: bold; 
+            color: #ff3366; 
+            line-height: 1.1;
+        }
+
+        .record { 
+            font-size: 2.4rem; 
+            font-weight: bold; 
+            color: #ffcc00; 
+            line-height: 1.1;
+        }
+
+        .reaction-val {
+            font-size: 2.4rem; 
+            font-weight: bold; 
+            color: #00ffcc; 
+            line-height: 1.1;
+        }
+
+        /* Formulaires et listes */
+        label { 
+            display: block; 
+            margin: 18px 0 8px; 
+            font-weight: bold; 
+            text-align: left; 
+            font-size: 1rem;
+        }
+
+        select { 
+            width: 100%; 
+            padding: 14px; 
+            font-size: 1rem;
+            border-radius: 8px; 
+            border: none; 
+            background: #2a2a2a; 
+            color: white; 
+            box-sizing: border-box;
+            appearance: none; 
+        }
+
+        input[type="range"] { 
+            width: 100%; 
+            margin: 15px 0;
+            height: 8px;
+            border-radius: 5px;
+            background: #2a2a2a;
+        }
+
+        /* Bouton d'action principal tactile et dynamique */
+        button { 
+            background: #00ffcc; 
+            color: #121212; 
+            border: none; 
+            padding: 18px 30px; 
+            font-size: 1.2rem; 
+            font-weight: bold; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            width: 100%; 
+            box-shadow: 0 4px 10px rgba(0, 255, 204, 0.2);
+            transition: background 0.2s, color 0.2s;
+        }
+
+        /* Bouton Bluetooth spécifique */
+        button.ble-btn {
+            background: #ffcc00;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 10px rgba(255, 204, 0, 0.2);
+        }
+
+        button.ble-connecte {
+            background: #1a3a3a;
+            color: #00ffcc;
+            border: 1px solid #00ffcc;
+            box-shadow: none;
+        }
+
+        /* Style quand le système est actif (Bouton d'arrêt) */
+        button.actif {
+            background: #ff3366;
+            color: white;
+            box-shadow: 0 4px 10px rgba(255, 51, 102, 0.2);
+        }
+
+        button:active { 
+            transform: scale(0.98); 
+        }
+
+        button:disabled {
+            background: #444;
+            color: #666;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .info { 
+            color: #aaa; 
+            font-size: 0.9rem; 
+            text-align: left;
+            margin-top: 5px;
+        }
         
-        .info { color: #aaa; font-size: 0.9rem; text-align: left; margin-top: 5px; }
-        #statut { font-size: 1.1rem; color: #00ffcc; font-weight: 500; margin: 15px 0; }
+        #statut {
+            font-size: 1.1rem;
+            color: #ffcc00;
+            font-weight: 500;
+            margin: 15px 0;
+        }
 
-        details { width: 100%; text-align: left; }
-        summary { display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 1.2rem; font-weight: bold; color: #aaa; list-style: none; outline: none; }
-        summary::-webkit-details-marker { display: none; }
-        .chevron { font-size: 1rem; color: #00ffcc; transition: transform 0.2s ease; }
-        details[open] .chevron { transform: rotate(180deg); }
-        .details-content { margin-top: 15px; }
+        /* Style de l'accordéon natif */
+        details {
+            width: 100%;
+            text-align: left;
+        }
+        summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #aaa;
+            list-style: none;
+            outline: none;
+        }
+        summary::-webkit-details-marker {
+            display: none;
+        }
+        .chevron {
+            font-size: 1rem;
+            color: #00ffcc;
+            transition: transform 0.2s ease;
+        }
+        details[open] .chevron {
+            transform: rotate(180deg);
+        }
+        .details-content {
+            margin-top: 15px;
+        }
 
+        /* Historique */
         .liste-historique { list-style: none; padding: 0; margin: 15px 0 0 0; text-align: left; }
-        .liste-historique li { padding: 14px; background: #2a2a2a; margin-bottom: 8px; border-radius: 8px; display: flex; justify-content: space-between; font-size: 1rem; border-left: 5px solid #00ffcc; }
+        .liste-historique li { 
+            padding: 14px; 
+            background: #2a2a2a; 
+            margin-bottom: 8px; 
+            border-radius: 8px; 
+            display: flex; 
+            justify-content: space-between; 
+            font-size: 1rem;
+            border-left: 5px solid #00ffcc; 
+        }
         .liste-historique li:first-child { background: #333; font-weight: bold; border-left-color: #ff3366; }
-        
-        .btn-role { margin: 15px 0; padding: 25px; font-size: 1.3rem; }
-        #statutP2P { font-weight: bold; color: #ffcc00; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
-    <div id="ecranChoixRole" class="card">
+    <div class="card">
         <h1>PunchMeter Pro 🥊</h1>
-        <h3>Choisissez le rôle de cet appareil :</h3>
-        <button id="btnRoleInterface" class="btn-role">📱 INTERFACE (Sous vos yeux)</button>
-        <button id="btnRoleCapteur" class="btn-role" style="background: #ff3366; color: white;">🔌 CAPTEUR (Sur le sac)</button>
-    </div>
-
-    <div id="ecranCapteur" class="card" style="display: none;">
-        <h1>Mode Capteur 🔌</h1>
-        <div id="statutP2PCapteur" class="info" style="text-align:center; font-size:1.2rem; color:#ffcc00; margin: 20px 0;">Connexion P2P : En attente...</div>
-        <p>Fixez solidement ce smartphone sur le sac de frappe.</p>
-        <div id="statutCapteur" style="font-size: 1.4rem; color: #aaa; margin: 30px 0;">Hors ligne</div>
-        <button id="btnAutoriserCapteur" style="display: none;">Activer les Capteurs (iOS)</button>
-    </div>
-
-    <div id="ecranInterface" style="display: none;">
-        <div class="card">
-            <h1>PunchMeter Pro 📱</h1>
-            <div id="statutP2PInterface" style="font-size:0.9rem; color:#ffcc00; margin-bottom:15px;">Liaison Directe P2P : Déconnecté</div>
-            
-            <div class="stats-container">
-                <div class="score-box">
-                    <div class="score-label">Dernier Coup</div>
-                    <div class="score" id="affichageScore">0</div>
-                </div>
-                <div class="score-box" style="border-left: 1px solid #333; border-right: 1px solid #333;">
-                    <div class="score-label">⏱️ Réaction</div>
-                    <div class="reaction-val" id="affichageReaction">-.---s</div>
-                </div>
-                <div class="score-box">
-                    <div class="score-label">🏆 Record</div>
-                    <div class="record" id="affichageRecord">0</div>
-                </div>
+        
+        <div class="stats-container">
+            <div class="score-box">
+                <div class="score-label">Dernier Coup</div>
+                <div class="score" id="affichageScore">0</div>
             </div>
-
-            <p id="statut">En attente de liaison WebRTC...</p>
-            <button id="btnConfiguration" disabled style="background:#555; color:#aaa; cursor:not-allowed;">DÉMARRER</button>
+            <div class="score-box" style="border-left: 1px solid #333; border-right: 1px solid #333;">
+                <div class="score-label">⏱️ Réaction</div>
+                <div class="reaction-val" id="affichageReaction">-.---s</div>
+            </div>
+            <div class="score-box">
+                <div class="score-label">🏆 Record</div>
+                <div class="record" id="affichageRecord">0</div>
+            </div>
         </div>
 
-        <div class="card">
-            <h3>📋 Historique (5 derniers)</h3>
-            <ul id="listeHistorique" class="liste-historique">
-                <li style="border: none; color: #666; justify-content: center; background: transparent;">Aucun coup enregistré.</li>
-            </ul>
-        </div>
+        <p id="statut">Capteur BWT901CL non connecté.</p>
+        <button id="btnBluetooth" class="ble-btn">CONNECTER BWT901CL</button>
+        <button id="btnConfiguration" disabled>DÉMARRER</button>
+    </div>
 
-        <div class="card">
-            <details>
-                <summary>
-                    <span>⚙️ Réglages & Sensibilité</span>
-                    <span class="chevron">▼</span>
-                </summary>
-                <div class="details-content">
-                    <label for="selectMode">Mode de fonctionnement :</label>
-                    <select id="selectMode">
-                        <option value="libre">Entraînement Libre (Continu)</option>
-                        <option value="reaction">Test de Réaction (Signal Continu Automatique)</option>
-                        <option value="combo">Test d'Enchaînement (Combo Aléatoire)</option>
+    <div class="card">
+        <h3>📋 Historique (5 derniers)</h3>
+        <ul id="listeHistorique" class="liste-historique">
+            <li style="border: none; color: #666; justify-content: center; background: transparent;">Aucun coup enregistré.</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <details>
+            <summary>
+                <span>⚙️ Réglages & Sensibilité</span>
+                <span class="chevron">▼</span>
+            </summary>
+            <div class="details-content">
+                <label for="selectMode">Mode de fonctionnement :</label>
+                <select id="selectMode">
+                    <option value="libre">Entraînement Libre (Continu)</option>
+                    <option value="reaction">Test de Réaction (Signal Continu Automatique)</option>
+                    <option value="combo">Test d'Enchaînement (Combo Aléatoire)</option>
+                </select>
+
+                <div id="wrapperCombo" style="display: none;">
+                    <label for="selectNbCoupsCombo">Nombre de coups du combo :</label>
+                    <select id="selectNbCoupsCombo">
+                        <option value="1">1 coup</option>
+                        <option value="2">2 coups</option>
+                        <option value="3" selected>3 coups</option>
+                        <option value="4">4 coups</option>
+                        <option value="5">5 coups</option>
+                        <option value="6">6 coups</option>
                     </select>
-
-                    <div id="wrapperCombo" style="display: none;">
-                        <label for="selectNbCoupsCombo">Nombre de coups du combo :</label>
-                        <select id="selectNbCoupsCombo">
-                            <option value="1">1 coup</option>
-                            <option value="2">2 coups</option>
-                            <option value="3" selected>3 coups</option>
-                            <option value="4">4 coups</option>
-                            <option value="5">5 coups</option>
-                            <option value="6">6 coups</option>
-                        </select>
-                    </div>
-
-                    <label for="selectSupport">Support utilisé :</label>
-                    <select id="selectSupport">
-                        <option value="sac">Sac Suspendu (Mobile)</option>
-                        <option value="mur">Cible Murale (Fixe)</option>
-                    </select>
-
-                    <label for="sliderSensibilite">Seuil de choc :</label>
-                    <input type="range" id="sliderSensibilite" min="5" max="50" value="15">
-                    <div class="info">Seuil actuel : <span id="valeurSeuil" style="color: #00ffcc; font-weight:bold;">15</span> m/s²</div>
                 </div>
-            </details>
-        </div>
+
+                <label for="selectSupport">Support utilisé :</label>
+                <select id="selectSupport">
+                    <option value="sac">Sac Suspendu (Mobile)</option>
+                    <option value="mur">Cible Murale (Fixe)</option>
+                </select>
+
+                <label for="sliderSensibilite">Seuil de choc :</label>
+                <input type="range" id="sliderSensibilite" min="5" max="50" value="15">
+                <div class="info">Seuil actuel : <span id="valeurSeuil" style="color: #00ffcc; font-weight:bold;">15</span> m/s²</div>
+            </div>
+        </details>
     </div>
 
     <script>
-        const socket = io();
-        let roleAppareil = null;
+        let seuilDetection = 15; 
+        let dureeFenetreImpact = 100; 
+        let tempsAttenteAntiRebond = 1000; 
+        
+        let modeActuel = 'libre'; 
+        let systemeActif = false; 
+        let enTrainDeFrapper = false;
+        let maxImpact = 0;
+        let recordSession = 0;
+        let historiqueCoups = [];
+        let compteurCoups = 0;
 
-        // Configuration WebRTC standard (Pas besoin de serveurs TURN externes en Wi-Fi local)
-        const configurationWebRTC = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
-        let peerConnection = null;
-        let dataChannel = null;
+        // Gestion de la réaction
+        let sequenceEnCours = false;
+        let signalDonne = false;
+        let tempsSignal = 0;
+        let timeoutSignal = null;
 
-        // Variables de l'application
-        let seuilDetection = 15; let dureeFenetreImpact = 100; let tempsAttenteAntiRebond = 1000;
-        let modeActuel = 'libre'; let systemeActif = false; let enTrainDeFrapper = false;
-        let maxImpact = 0; let recordSession = 0; let historiqueCoups = []; let compteurCoups = 0;
-        let sequenceEnCours = false; let signalDonne = false; let tempsSignal = 0; let timeoutSignal = null;
-        let nombreCoupsCombo = 3; let coupsRestantsCombo = 0; let comboEnCours = false;
+        // Gestion du Mode Combo
+        let nombreCoupsCombo = 3;
+        let coupsRestantsCombo = 0;
+        let comboEnCours = false;
 
-        // Éléments du DOM
-        const ecranChoixRole = document.getElementById('ecranChoixRole');
-        const ecranCapteur = document.getElementById('ecranCapteur');
-        const ecranInterface = document.getElementById('ecranInterface');
-        const statutCapteur = document.getElementById('statutCapteur');
-        const statutP2PCapteur = document.getElementById('statutP2PCapteur');
-        const statutP2PInterface = document.getElementById('statutP2PInterface');
-        const btnAutoriserCapteur = document.getElementById('btnAutoriserCapteur');
+        // Variables Web Bluetooth
+        let deviceBluetooth = null;
+        let caractéristiqueBluetooth = null;
+
+        // UUIDs de communication standards des modules WitMotion (Services série-vers-BLE alternatifs)
+        const WITMOTION_SERVICES = ['0000ffe0-0000-1000-8000-00805f9b34fb', '49535343-fe7d-4ae5-8fa9-9fafd205e455'];
+
         const slider = document.getElementById('sliderSensibilite');
         const valeurSeuilText = document.getElementById('valeurSeuil');
         const selectSupport = document.getElementById('selectSupport');
@@ -186,178 +335,253 @@
         const listeHistorique = document.getElementById('listeHistorique');
         const statut = document.getElementById('statut');
         const btnConfig = document.getElementById('btnConfiguration');
+        const btnBluetooth = document.getElementById('btnBluetooth');
 
-        // --- CHOIX DU RÔLE ET INITIALISATION WEBRTC ---
-        document.getElementById('btnRoleInterface').addEventListener('click', () => {
-            roleAppareil = 'interface';
-            ecranChoixRole.style.display = 'none';
-            ecranInterface.style.display = 'block';
-            initialiserWebRTC(true);
-        });
-
-        document.getElementById('btnRoleCapteur').addEventListener('click', () => {
-            roleAppareil = 'capteur';
-            ecranChoixRole.style.display = 'none';
-            ecranCapteur.style.display = 'block';
-            initialiserWebRTC(false);
-
-            if (typeof DeviceMotionEvent.requestPermission === 'function') {
-                btnAutoriserCapteur.style.display = 'block';
-                btnAutoriserCapteur.addEventListener('click', async () => {
-                    const p = await DeviceMotionEvent.requestPermission();
-                    if (p === 'granted') { btnAutoriserCapteur.style.display = 'none'; activerEcouteCapteurs(); }
-                });
-            } else { activerEcouteCapteurs(); }
-        });
-
-        // --- CORE WEBRTC ---
-        function initialiserWebRTC(isInterface) {
-            peerConnection = new RTCPeerConnection(configurationWebRTC);
-
-            // Envoi des candidats réseau découverts au voisin
-            peerConnection.onicecandidate = (event) => {
-                if (event.candidate) socket.emit('signal', { candidate: event.candidate });
-            };
-
-            if (isInterface) {
-                // L'interface crée le canal de données (Data Channel)
-                dataChannel = peerConnection.createDataChannel("punchDataChannel");
-                configurerDataChannel();
-
-                // L'interface initie l'offre de connexion
-                peerConnection.createOffer().then(offer => {
-                    return peerConnection.setLocalDescription(offer);
-                }).then(() => {
-                    socket.emit('signal', { sdp: peerConnection.localDescription });
-                });
-            } else {
-                // Le capteur intercepte le canal de données créé par l'interface
-                peerConnection.ondatachannel = (event) => {
-                    dataChannel = event.channel;
-                    configurerDataChannel();
-                };
-            }
-        }
-
-        // Écouteur des signaux inter-téléphones (via WebSocket de signalement)
-        socket.on('signal', async (data) => {
-            if (!peerConnection) return;
-            if (data.sdp) {
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
-                // Si le capteur reçoit l'offre de l'interface, il y répond
-                if (data.sdp.type === 'offer' && roleAppareil === 'capteur') {
-                    const answer = await peerConnection.createAnswer();
-                    await peerConnection.setLocalDescription(answer);
-                    socket.emit('signal', { sdp: peerConnection.localDescription });
-                }
-            } else if (data.candidate) {
-                await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
-            }
-        });
-
-        function configurerDataChannel() {
-            dataChannel.onopen = () => {
-                if (roleAppareil === 'interface') {
-                    statutP2PInterface.innerText = "⚡ Liaison Directe P2P : CONNECTÉ (0ms latence)";
-                    statutP2PInterface.style.color = "#00ffcc";
-                    btnConfig.disabled = false;
-                    btnConfig.style.background = "#00ffcc";
-                    btnConfig.style.color = "#121212";
-                    btnConfig.style.cursor = "pointer";
-                    statut.innerText = "Prêt à démarrer.";
-                    envoyerConfigParP2P();
-                } else {
-                    statutP2PCapteur.innerText = "⚡ Liaison Directe P2P : CONNECTÉ";
-                    statutP2PCapteur.style.color = "#00ffcc";
-                    statutCapteur.innerText = "En attente du démarrage de la session...";
-                }
-            };
-
-            dataChannel.onclose = () => {
-                if (roleAppareil === 'interface') {
-                    statutP2PInterface.innerText = "Liaison Directe P2P : DÉCONNECTÉ";
-                    statutP2PInterface.style.color = "#ff3366";
-                    btnConfig.disabled = true;
-                    btnConfig.style.background = "#555";
-                    arreterSysteme();
-                } else {
-                    statutP2PCapteur.innerText = "Liaison Directe P2P : COUPÉE";
-                    statutP2PCapteur.style.color = "#ff3366";
-                    statutCapteur.innerText = "Hors ligne";
-                }
-            };
-
-            // Traitement des données reçues en direct (P2P pur)
-            dataChannel.onmessage = (event) => {
-                const msg = JSON.parse(event.data);
-                
-                if (roleAppareil === 'interface') {
-                    if (msg.type === 'impact') receptionnerImpact(msg.force);
-                    if (msg.type === 'faux-depart') receptionnerFauxDepart();
-                } else if (roleAppareil === 'capteur') {
-                    if (msg.type === 'sync') {
-                        seuilDetection = msg.seuilDetection;
-                        dureeFenetreImpact = msg.dureeFenetreImpact;
-                        tempsAttenteAntiRebond = msg.tempsAttenteAntiRebond;
-                        modeActuel = msg.modeActuel;
-                        systemeActif = msg.systemeActif;
-                        sequenceEnCours = msg.sequenceEnCours;
-                        signalDonne = msg.signalDonne;
-                        comboEnCours = msg.comboEnCours;
-
-                        if (systemeActif) {
-                            statutCapteur.innerText = "🔴 ANALYSE EN COURS (Frappez !)";
-                            statutCapteur.style.color = "#ff3366";
-                        } else {
-                            statutCapteur.innerText = "🟢 Prêt (Session en pause)";
-                            statutCapteur.style.color = "#00ffcc";
-                        }
-                    }
-                }
-            };
-        }
-
-        function envoyerConfigParP2P() {
-            if (dataChannel && dataChannel.readyState === "open") {
-                dataChannel.send(JSON.stringify({
-                    type: 'sync', seuilDetection, dureeFenetreImpact, tempsAttenteAntiRebond,
-                    modeActuel, systemeActif, sequenceEnCours, signalDonne, comboEnCours
-                }));
-            }
-        }
-
-        // --- LOGIQUE INTERFACE ---
         slider.addEventListener('input', (e) => {
             seuilDetection = parseFloat(e.target.value);
             valeurSeuilText.innerText = seuilDetection;
-            envoyerConfigParP2P();
         });
 
         selectSupport.addEventListener('change', (e) => {
             if (e.target.value === 'sac') {
-                dureeFenetreImpact = 100; tempsAttenteAntiRebond = 1000; slider.value = 15;
-            } else {
-                dureeFenetreImpact = 30; tempsAttenteAntiRebond = 500; slider.value = 30;
+                dureeFenetreImpact = 100;    
+                tempsAttenteAntiRebond = 1000; 
+                slider.value = 15;
+            } else if (e.target.value === 'mur') {
+                dureeFenetreImpact = 30;     
+                tempsAttenteAntiRebond = 500;  
+                slider.value = 30;           
             }
             seuilDetection = parseFloat(slider.value);
             valeurSeuilText.innerText = seuilDetection;
-            envoyerConfigParP2P();
         });
 
         selectMode.addEventListener('change', (e) => {
             modeActuel = e.target.value;
-            wrapperCombo.style.display = (modeActuel === 'combo') ? 'block' : 'none';
+            if (modeActuel === 'combo') {
+                wrapperCombo.style.display = 'block';
+            } else {
+                wrapperCombo.style.display = 'none';
+            }
             arreterSysteme();
         });
 
-        selectNbCoupsCombo.addEventListener('change', (e) => { nombreCoupsCombo = parseInt(e.target.value); });
+        selectNbCoupsCombo.addEventListener('change', (e) => {
+            nombreCoupsCombo = parseInt(e.target.value);
+        });
 
         function annoncerTexte(texte) {
-            let m = new SpeechSynthesisUtterance(texte); m.lang = 'fr-FR'; m.rate = 1.3;
-            window.speechSynthesis.speak(m);
+            let message = new SpeechSynthesisUtterance(texte);
+            message.lang = 'fr-FR';
+            message.rate = 1.3; 
+            window.speechSynthesis.speak(message);
         }
 
+        // --- GESTION DU BLUETOOTH ---
+        btnBluetooth.addEventListener('click', async () => {
+            if (deviceBluetooth && deviceBluetooth.gatt.connected) {
+                deviceBluetooth.gatt.disconnect();
+                return;
+            }
+
+            try {
+                statut.innerText = "Recherche du BWT901CL...";
+                statut.style.color = "#ffcc00";
+
+                deviceBluetooth = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: WITMOTION_SERVICES
+                });
+
+                statut.innerText = "Connexion au capteur...";
+                const server = await deviceBluetooth.gatt.connect();
+
+                statut.innerText = "Recherche des flux de données...";
+                let service = null;
+                
+                // Essai de connexion sur les différents profils de puces WitMotion possibles
+                for (const uuid of WITMOTION_SERVICES) {
+                    try {
+                        service = await server.getPrimaryService(uuid);
+                        if (service) break;
+                    } catch (e) { /* continue */ }
+                }
+
+                if (!service) throw new Error("Service GATT introuvable.");
+
+                const characteristics = await service.getCharacteristics();
+                caractéristiqueBluetooth = characteristics.find(c => c.properties.notify);
+
+                if (!caractéristiqueBluetooth) throw new Error("Flux de notification introuvable.");
+
+                await caractéristiqueBluetooth.startNotifications();
+                caractéristiqueBluetooth.addEventListener('characteristicvaluechanged', decoderDonneesBWT901CL);
+                deviceBluetooth.addEventListener('gattserverdisconnected', onBluetoothDisconnected);
+
+                // UI mise à jour : Capteur prêt
+                statut.innerText = "BWT901CL Connecté. Prêt à démarrer !";
+                statut.style.color = "#00ffcc";
+                btnBluetooth.innerText = "DÉCONNECTER LE CAPTEUR";
+                btnBluetooth.classList.add('ble-connecte');
+                btnConfig.disabled = false;
+
+            } catch (error) {
+                console.error(error);
+                statut.innerText = "Erreur de connexion : " + error.message;
+                statut.style.color = "#ff3366";
+                if (deviceBluetooth) deviceBluetooth.gatt.disconnect();
+            }
+        });
+
+        function onBluetoothDisconnected() {
+            statut.innerText = "Capteur déconnecté.";
+            statut.style.color = "#ff3366";
+            btnBluetooth.innerText = "CONNECTER BWT901CL";
+            btnBluetooth.classList.remove('ble-connecte');
+            btnConfig.disabled = true;
+            arreterSysteme();
+        }
+
+        // Décodage du protocole binaire WitMotion BWT901CL
+        function decoderDonneesBWT901CL(event) {
+            if (!systemeActif) return;
+
+            const value = event.target.value;
+            const len = value.byteLength;
+
+            // Parcours de la trame pour trouver l'en-tête WitMotion de l'accélération (0x55 0x61)
+            for (let i = 0; i < len - 7; i++) {
+                if (value.getUint8(i) === 0x55 && value.getUint8(i + 1) === 0x61) {
+                    // Lecture des entiers signés sur 16 bits (Little Endian)
+                    const axRaw = value.getInt16(i + 2, true);
+                    const ayRaw = value.getInt16(i + 4, true);
+                    const azRaw = value.getInt16(i + 6, true);
+
+                    // Formule constructeur : (Raw / 32768) * 16g * 9.80665 pour passer en m/s²
+                    const ax = (axRaw / 32768.0) * 16.0 * 9.80665;
+                    const ay = (ayRaw / 32768.0) * 16.0 * 9.80665;
+                    const az = (azRaw / 32768.0) * 16.0 * 9.80665;
+
+                    // Calcul de la magnitude totale brute (incluant la gravité terrestre)
+                    const magnitudeTotale = Math.sqrt(ax**2 + ay**2 + az**2);
+
+                    // Soustraction de la gravité terrestre (~9.81 m/s²) pour isoler l'accélération linéaire de l'impact
+                    let forceLinear = magnitudeTotale - 9.80665;
+                    if (forceLinear < 0) forceLinear = 0;
+
+                    traiterAnalyseImpact(forceLinear);
+                    break; 
+                }
+            }
+        }
+
+        // --- MOTEUR DE TRAITEMENT ET ANALYSE DU SOUFFLE / IMPACT ---
+        function traiterAnalyseImpact(forceInstantanee) {
+            // GESTION DU FAUX DÉPART (Uniquement en mode réaction)
+            if (modeActuel === 'reaction' && sequenceEnCours && !signalDonne) {
+                if (forceInstantanee > seuilDetection) {
+                    clearTimeout(timeoutSignal);
+                    sequenceEnCours = false;
+                    statut.innerText = "❌ FAUX DÉPART !";
+                    statut.style.color = "#ff3366";
+                    annoncerTexte("Faux départ");
+                    
+                    setTimeout(() => {
+                        if (systemeActif && modeActuel === 'reaction') lancerSequenceReaction();
+                    }, 2000);
+                }
+                return; 
+            }
+
+            // DÉTECTION DU COUP VALIDE
+            if (modeActuel === 'libre' || (modeActuel === 'reaction' && signalDonne) || (modeActuel === 'combo' && comboEnCours)) {
+                
+                if (!enTrainDeFrapper && forceInstantanee > seuilDetection) {
+                    enTrainDeFrapper = true;
+                    maxImpact = forceInstantanee;
+                    statut.innerText = "💥 IMPACT !";
+                    statut.style.color = "#ff3366";
+
+                    let tempsReactionCalcule = 0;
+                    if (modeActuel === 'reaction' || modeActuel === 'combo') {
+                        tempsReactionCalcule = (performance.now() - tempsSignal) / 1000;
+                    }
+
+                    setTimeout(() => {
+                        let scoreArrondi = Math.round(maxImpact); 
+                        affichageScore.innerText = scoreArrondi;
+                        
+                        if (modeActuel === 'reaction' || modeActuel === 'combo') {
+                            affichageReaction.innerText = tempsReactionCalcule.toFixed(3) + "s";
+                        } else {
+                            affichageReaction.innerText = "-.---s";
+                        }
+                        
+                        if (scoreArrondi > recordSession) {
+                            recordSession = scoreArrondi;
+                            affichageRecord.innerText = recordSession;
+                            if (modeActuel !== 'combo') annoncerTexte("Record " + scoreArrondi);
+                        } else {
+                            if (modeActuel !== 'combo') annoncerTexte(scoreArrondi.toString());
+                        }
+
+                        compteurCoups++;
+                        historiqueCoups.unshift({
+                            numero: compteurCoups,
+                            force: scoreArrondi,
+                            reaction: (modeActuel === 'reaction' || modeActuel === 'combo') ? tempsReactionCalcule.toFixed(3) : null
+                        });
+
+                        if (historiqueCoups.length > 5) {
+                            historiqueCoups.pop();
+                        }
+                        
+                        listeHistorique.innerHTML = historiqueCoups.map((coup) => {
+                            let details = `${coup.force} m/s²`;
+                            if (coup.reaction) details += ` / ⏱️ ${coup.reaction}s`;
+                            return `<li><span>Coup n°${coup.numero}</span> <b>${details}</b></li>`;
+                        }).join('');
+
+                        setTimeout(() => {
+                            enTrainDeFrapper = false;
+                            if (systemeActif) {
+                                if (modeActuel === 'libre') {
+                                    statut.innerText = "En attente du coup suivant...";
+                                    statut.style.color = "#00ffcc";
+                                } else if (modeActuel === 'reaction') {
+                                    lancerSequenceReaction();
+                                } else if (modeActuel === 'combo') {
+                                    coupsRestantsCombo--;
+                                    if (coupsRestantsCombo > 0) {
+                                        annoncerProchainCoupCombo();
+                                    } else {
+                                        statut.innerText = "Enchaînement terminé !";
+                                        statut.style.color = "#00ffcc";
+                                        annoncerTexte("Enchaînement terminé");
+                                        setTimeout(() => {
+                                            if (systemeActif && modeActuel === 'combo') lancerSequenceCombo();
+                                        }, 2500);
+                                    }
+                                }
+                            }
+                        }, tempsAttenteAntiRebond);
+
+                    }, dureeFenetreImpact);
+                } 
+                else if (enTrainDeFrapper && forceInstantanee > maxImpact) {
+                    maxImpact = forceInstantanee;
+                }
+            }
+        }
+
+        // Contrôle de l'acquisition session globale (Marche / Arrêt)
         btnConfig.addEventListener('click', () => {
+            if (!deviceBluetooth || !deviceBluetooth.gatt.connected) {
+                statut.innerText = "❌ Capteur Bluetooth non connecté.";
+                statut.style.color = "#ff3366";
+                return;
+            }
+
             if (!systemeActif) {
                 systemeActif = true;
                 btnConfig.innerText = "ARRÊTER";
@@ -365,129 +589,83 @@
 
                 if (modeActuel === 'libre') {
                     annoncerTexte("C'est parti");
-                    statut.innerText = "Analyse en cours... Frappez !"; statut.style.color = "#00ffcc";
-                } else if (modeActuel === 'reaction') { lancerSequenceReaction(); }
-                  else if (modeActuel === 'combo') { lancerSequenceCombo(); }
-            } else { arreterSysteme(); }
-            envoyerConfigParP2P();
+                    statut.innerText = "Analyse en cours... Frappez !";
+                    statut.style.color = "#00ffcc";
+                } else if (modeActuel === 'reaction') {
+                    lancerSequenceReaction();
+                } else if (modeActuel === 'combo') {
+                    lancerSequenceCombo();
+                }
+            } else {
+                arreterSysteme();
+            }
         });
 
         function arreterSysteme() {
-            systemeActif = false; sequenceEnCours = false; signalDonne = false; enTrainDeFrapper = false; comboEnCours = false;
+            systemeActif = false;
+            sequenceEnCours = false;
+            signalDonne = false;
+            enTrainDeFrapper = false;
+            comboEnCours = false;
             if (timeoutSignal) clearTimeout(timeoutSignal);
-            btnConfig.innerText = "DÉMARRER"; btnConfig.classList.remove('actif');
-            statut.innerText = (modeActuel === 'libre') ? "Prêt à démarrer." : (modeActuel === 'reaction') ? "Prêt pour le test." : "Prêt pour le combo.";
+            
+            btnConfig.innerText = "DÉMARRER";
+            btnConfig.classList.remove('actif');
+            
+            if (deviceBluetooth && deviceBluetooth.gatt.connected) {
+                if (modeActuel === 'libre') statut.innerText = "Prêt à démarrer.";
+                else if (modeActuel === 'reaction') statut.innerText = "Prêt pour le test de réaction.";
+                else statut.innerText = "Prêt pour le mode combo.";
+            } else {
+                statut.innerText = "Capteur BWT901CL non connecté.";
+            }
             statut.style.color = "#00ffcc";
-            envoyerConfigParP2P();
         }
 
         function lancerSequenceReaction() {
-            sequenceEnCours = true; signalDonne = false; enTrainDeFrapper = false;
-            statut.innerText = "Attendez le signal..."; statut.style.color = "#ffcc00";
-            envoyerConfigParP2P();
+            if (!systemeActif) return;
+
+            sequenceEnCours = true;
+            signalDonne = false;
+            enTrainDeFrapper = false;
             
-            let delai = 1500 + Math.random() * 3500;
+            statut.innerText = "Attendez le signal...";
+            statut.style.color = "#ffcc00";
+            
+            let delaiAleatoire = 1500 + Math.random() * 3500;
+            
             timeoutSignal = setTimeout(() => {
-                if (!systemeActif || !sequenceEnCours) return;
-                signalDonne = true; tempsSignal = performance.now();
-                statut.innerText = "💥 GO ! FRAPPEZ !"; statut.style.color = "#00ff33";
+                if (!systemeActif || !sequenceEnCours) return; 
+                
+                signalDonne = true;
+                tempsSignal = performance.now();
+                statut.innerText = "💥 GO ! FRAPPEZ !";
+                statut.style.color = "#00ff33"; 
                 annoncerTexte("Allez");
-                envoyerConfigParP2P();
-            }, delai);
+            }, delaiAleatoire);
         }
 
         function lancerSequenceCombo() {
-            comboEnCours = true; coupsRestantsCombo = nombreCoupsCombo;
-            statut.innerText = "Préparez-vous..."; statut.style.color = "#ffcc00";
-            envoyerConfigParP2P();
-            setTimeout(() => { if (systemeActif && comboEnCours) annoncerProchainCoupCombo(); }, 1500);
+            if (!systemeActif) return;
+            comboEnCours = true;
+            coupsRestantsCombo = nombreCoupsCombo;
+            statut.innerText = "Préparez-vous...";
+            statut.style.color = "#ffcc00";
+            
+            setTimeout(() => {
+                if (!systemeActif || !comboEnCours) return;
+                annoncerProchainCoupCombo();
+            }, 1500);
         }
 
         function annoncerProchainCoupCombo() {
-            let chiffre = Math.floor(Math.random() * 6) + 1;
-            let idx = nombreCoupsCombo - coupsRestantsCombo + 1;
-            statut.innerText = `🔥 CIBLE : Chiffre ${chiffre} (${idx}/${nombreCoupsCombo})`;
+            let chiffreAleatoire = Math.floor(Math.random() * 6) + 1;
+            let coupIndex = nombreCoupsCombo - coupsRestantsCombo + 1;
+            statut.innerText = `🔥 CIBLE : Chiffre ${chiffreAleatoire} (${coupIndex}/${nombreCoupsCombo})`;
             statut.style.color = "#00ff33";
-            annoncerTexte(chiffre.toString());
-        }
-
-        function receptionnerImpact(forceRecue) {
-            statut.innerText = "💥 IMPACT !"; statut.style.color = "#ff3366";
-            affichageScore.innerText = forceRecue;
-
-            let tempsReaction = 0;
-            if (modeActuel === 'reaction') {
-                tempsReaction = (performance.now() - tempsSignal) / 1000;
-                affichageReaction.innerText = tempsReaction.toFixed(3) + "s";
-            } else { affichageReaction.innerText = "-.---s"; }
-
-            if (forceRecue > recordSession) {
-                recordSession = forceRecue; affichageRecord.innerText = recordSession;
-                if (modeActuel !== 'combo') annoncerTexte("Record " + forceRecue);
-            } else { if (modeActuel !== 'combo') annoncerTexte(forceRecue.toString()); }
-
-            compteurCoups++;
-            historiqueCoups.unshift({ numero: compteurCoups, force: forceRecue, reaction: modeActuel === 'reaction' ? tempsReaction.toFixed(3) : null });
-            if (historiqueCoups.length > 5) historiqueCoups.pop();
-            listeHistorique.innerHTML = historiqueCoups.map(c => `<li><span>Coup n°${c.numero}</span> <b>${c.force} m/s²${c.reaction ? ' / ⏱️ '+c.reaction+'s' : ''}</b></li>`).join('');
-
-            setTimeout(() => {
-                if (!systemeActif) return;
-                if (modeActuel === 'libre') {
-                    statut.innerText = "En attente du coup suivant..."; statut.style.color = "#00ffcc";
-                } else if (modeActuel === 'reaction') { lancerSequenceReaction(); }
-                  else if (modeActuel === 'combo') {
-                    coupsRestantsCombo--;
-                    if (coupsRestantsCombo > 0) { annoncerProchainCoupCombo(); } 
-                    else {
-                        statut.innerText = "Enchaînement terminé !"; statut.style.color = "#00ffcc";
-                        annoncerTexte("Enchaînement terminé");
-                        setTimeout(() => { if (systemeActif && modeActuel === 'combo') lancerSequenceCombo(); }, 2500);
-                    }
-                }
-            }, tempsAttenteAntiRebond);
-        }
-
-        function receptionnerFauxDepart() {
-            clearTimeout(timeoutSignal);
-            sequenceEnCours = false;
-            statut.innerText = "❌ FAUX DÉPART !"; statut.style.color = "#ff3366";
-            annoncerTexte("Faux départ");
-            setTimeout(() => { if (systemeActif && modeActuel === 'reaction') lancerSequenceReaction(); }, 2000);
-        }
-
-        // --- LOGIQUE FIZIQUE (CAPTEUR SEULEMENT) ---
-        function activerEcouteCapteurs() {
-            window.addEventListener('devicemotion', (event) => {
-                if (roleAppareil !== 'capteur' || !systemeActif || !dataChannel || dataChannel.readyState !== "open") return;
-
-                let acc = event.acceleration;
-                if (!acc || acc.x === null) return;
-
-                let forceInstantanee = Math.sqrt(acc.x**2 + acc.y**2 + acc.z**2);
-
-                if (modeActuel === 'reaction' && sequenceEnCours && !signalDonne) {
-                    if (forceInstantanee > seuilDetection) {
-                        dataChannel.send(JSON.stringify({ type: 'faux-depart' }));
-                    }
-                    return;
-                }
-
-                if (modeActuel === 'libre' || (modeActuel === 'reaction' && signalDonne) || (modeActuel === 'combo' && comboEnCours)) {
-                    if (!enTrainDeFrapper && forceInstantanee > seuilDetection) {
-                        enTrainDeFrapper = true;
-                        maxImpact = forceInstantanee;
-
-                        setTimeout(() => {
-                            let scoreArrondi = Math.round(maxImpact);
-                            dataChannel.send(JSON.stringify({ type: 'impact', force: scoreArrondi }));
-                            setTimeout(() => { enTrainDeFrapper = false; }, tempsAttenteAntiRebond);
-                        }, dureeFenetreImpact);
-                    } else if (enTrainDeFrapper && forceInstantanee > maxImpact) {
-                        maxImpact = forceInstantanee;
-                    }
-                }
-            });
+            
+            tempsSignal = performance.now(); 
+            annoncerTexte(chiffreAleatoire.toString());
         }
     </script>
 </body>
