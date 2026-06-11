@@ -65,24 +65,30 @@
 
         /* Chiffres sans virgules */
         .score { 
-            font-size: 2.8rem; 
+            font-size: 2.5rem; 
             font-weight: bold; 
             color: #ff3366; 
             line-height: 1.1;
         }
 
         .record { 
-            font-size: 2.4rem; 
+            font-size: 2.5rem; 
             font-weight: bold; 
             color: #ffcc00; 
             line-height: 1.1;
         }
 
         .reaction-val {
-            font-size: 2.4rem; 
+            font-size: 2.5rem; 
             font-weight: bold; 
             color: #00ffcc; 
             line-height: 1.1;
+        }
+
+        .sub-val {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 2px;
         }
 
         /* Formulaires et listes */
@@ -94,7 +100,7 @@
             font-size: 1rem;
         }
 
-        select { 
+        select, input[type="number"] { 
             width: 100%; 
             padding: 14px; 
             font-size: 1rem;
@@ -103,6 +109,9 @@
             background: #2a2a2a; 
             color: white; 
             box-sizing: border-box;
+        }
+
+        select {
             appearance: none; 
         }
 
@@ -229,15 +238,18 @@
         <div class="stats-container">
             <div class="score-box">
                 <div class="score-label">Dernier Coup</div>
-                <div class="score" id="affichageScore">0</div>
+                <div class="score" id="affichageScore">0<span>kg</span></div>
+                <div class="sub-val" id="subScoreAcc">0 m/s²</div>
             </div>
             <div class="score-box" style="border-left: 1px solid #333; border-right: 1px solid #333;">
                 <div class="score-label">⏱️ Réaction</div>
                 <div class="reaction-val" id="affichageReaction">-.---s</div>
+                <div class="sub-val">&nbsp;</div>
             </div>
             <div class="score-box">
                 <div class="score-label">🏆 Record</div>
-                <div class="record" id="affichageRecord">0</div>
+                <div class="record" id="affichageRecord">0<span>kg</span></div>
+                <div class="sub-val" id="subRecordAcc">0 m/s²</div>
             </div>
         </div>
 
@@ -285,6 +297,10 @@
                     <option value="mur">Cible Murale (Fixe)</option>
                 </select>
 
+                <label for="inputMasse">Masse virtuelle d'impact (kg) :</label>
+                <input type="number" id="inputMasse" value="3.0" step="0.1" min="0.1">
+                <div class="info" style="margin-bottom: 15px;">Masse estimée de la frappe. Ajustez : ~3.0kg au poignet, ~1.5kg sur cible murale + mousse dense.</div>
+
                 <label for="sliderSensibilite">Seuil de choc :</label>
                 <input type="range" id="sliderSensibilite" min="5" max="50" value="15">
                 <div class="info">Seuil actuel : <span id="valeurSeuil" style="color: #00ffcc; font-weight:bold;">15</span> m/s²</div>
@@ -301,9 +317,10 @@
         let systemeActif = false; 
         let enTrainDeFrapper = false;
         let maxImpact = 0;
-        let recordSession = 0;
+        let recordSessionKg = 0;
         let historiqueCoups = [];
         let compteurCoups = 0;
+        let masseImpact = 3.0;
 
         // Gestion de la réaction
         let sequenceEnCours = false;
@@ -316,23 +333,27 @@
         let coupsRestantsCombo = 0;
         let comboEnCours = false;
 
-        // Variables Web Bluetooth et Buffer de streaming
+        // Variables Web Bluetooth et Buffer
         let deviceBluetooth = null;
         let caractéristiqueBluetooth = null;
         let decodageBuffer = [];
 
-        // UUIDs de communication standards des modules WitMotion
         const WITMOTION_SERVICES = ['0000ffe0-0000-1000-8000-00805f9b34fb', '49535343-fe7d-4ae5-8fa9-9fafd205e455'];
 
         const slider = document.getElementById('sliderSensibilite');
         const valeurSeuilText = document.getElementById('valeurSeuil');
         const selectSupport = document.getElementById('selectSupport');
+        const inputMasse = document.getElementById('inputMasse');
         const selectMode = document.getElementById('selectMode');
         const wrapperCombo = document.getElementById('wrapperCombo');
         const selectNbCoupsCombo = document.getElementById('selectNbCoupsCombo');
+        
         const affichageScore = document.getElementById('affichageScore');
+        const subScoreAcc = document.getElementById('subScoreAcc');
         const affichageReaction = document.getElementById('affichageReaction');
         const affichageRecord = document.getElementById('affichageRecord');
+        const subRecordAcc = document.getElementById('subRecordAcc');
+        
         const listeHistorique = document.getElementById('listeHistorique');
         const statut = document.getElementById('statut');
         const btnConfig = document.getElementById('btnConfiguration');
@@ -343,18 +364,26 @@
             valeurSeuilText.innerText = seuilDetection;
         });
 
+        inputMasse.addEventListener('input', (e) => {
+            let val = parseFloat(e.target.value);
+            if (!isNaN(val) && val > 0) masseImpact = val;
+        });
+
         selectSupport.addEventListener('change', (e) => {
             if (e.target.value === 'sac') {
                 dureeFenetreImpact = 100;    
                 tempsAttenteAntiRebond = 1000; 
                 slider.value = 15;
+                inputMasse.value = "3.0";
             } else if (e.target.value === 'mur') {
                 dureeFenetreImpact = 30;     
                 tempsAttenteAntiRebond = 500;  
-                slider.value = 30;           
+                slider.value = 10; // Légèrement plus sensible par défaut pour le mur          
+                inputMasse.value = "1.5";
             }
             seuilDetection = parseFloat(slider.value);
             valeurSeuilText.innerText = seuilDetection;
+            masseImpact = parseFloat(inputMasse.value);
         });
 
         selectMode.addEventListener('change', (e) => {
@@ -441,28 +470,23 @@
             arreterSysteme();
         }
 
-        // Reconstitution d'un entier signé 16 bits à partir de 2 octets (Little Endian)
         function convertirEnInt16(low, high) {
             let val = (high << 8) | low;
             return val & 0x8000 ? val - 65536 : val;
         }
 
-        // Ajout des données au buffer glissant pour éviter les pertes liées au découpage Bluetooth MTU
         function accumulerEtFiltrerTrame(event) {
             const value = event.target.value;
             for (let i = 0; i < value.byteLength; i++) {
                 decodageBuffer.push(value.getUint8(i));
             }
 
-            // Si l'acquisition n'est pas lancée via "DÉMARRER", on vide le buffer pour éviter d'accumuler du retard
             if (!systemeActif) {
                 decodageBuffer = [];
                 return;
             }
 
-            // Analyse de l'historique du flux d'octets
             while (decodageBuffer.length >= 2) {
-                // Tout paquet WitMotion valide commence par l'en-tête 0x55
                 if (decodageBuffer[0] !== 0x55) {
                     decodageBuffer.shift();
                     continue;
@@ -470,56 +494,50 @@
 
                 const flagPaquet = decodageBuffer[1];
 
-                // CAS 1 : Trame groupée BLE 5.0 (0x55 0x61) - Requis : 20 octets au total
                 if (flagPaquet === 0x61) {
-                    if (decodageBuffer.length < 20) break; // Paquet incomplet, on attend la suite
+                    if (decodageBuffer.length < 20) break; 
 
                     const axRaw = convertirEnInt16(decodageBuffer[2], decodageBuffer[3]);
                     const ayRaw = convertirEnInt16(decodageBuffer[4], decodageBuffer[5]);
                     const azRaw = convertirEnInt16(decodageBuffer[6], decodageBuffer[7]);
 
                     analyserAccelerationBrute(axRaw, ayRaw, azRaw);
-                    decodageBuffer.splice(0, 20); // Nettoyage de la trame traitée
+                    decodageBuffer.splice(0, 20); 
                 } 
-                // CAS 2 : Trame d'accélération seule BLE 4.0 (0x55 0x51) - Requis : 11 octets
                 else if (flagPaquet === 0x51) {
                     if (decodageBuffer.length < 11) break; 
 
                     const axRaw = convertirEnInt16(decodageBuffer[2], decodageBuffer[3]);
-                    const ayRaw = convertirEnInt16(decodageBuffer[4], decodageBuffer[5]);
+                    const ayRaw = convertirEnInt16(convertirEnInt16(decodageBuffer[4], decodageBuffer[5]));
                     const azRaw = convertirEnInt16(decodageBuffer[6], decodageBuffer[7]);
 
                     analyserAccelerationBrute(axRaw, ayRaw, azRaw);
                     decodageBuffer.splice(0, 11);
                 } 
-                // CAS 3 : Autres types de trames série redondantes (Vitesse angulaire 0x52, Angles 0x53...)
                 else if (flagPaquet === 0x52 || flagPaquet === 0x53 || flagPaquet === 0x54) {
                     if (decodageBuffer.length < 11) break; 
-                    decodageBuffer.splice(0, 11); // On ignore les angles pour libérer de la mémoire
+                    decodageBuffer.splice(0, 11); 
                 } 
                 else {
-                    // En-tête invalide ou corrompu
                     decodageBuffer.shift();
                 }
             }
         }
 
         function analyserAccelerationBrute(axRaw, ayRaw, azRaw) {
-            // Formule constructeur WitMotion (Échelle par défaut à ±16g) convertie en m/s²
             const ax = (axRaw / 32768.0) * 16.0 * 9.80665;
             const ay = (ayRaw / 32768.0) * 16.0 * 9.80665;
             const az = (azRaw / 32768.0) * 16.0 * 9.80665;
 
             const magnitudeTotale = Math.sqrt(ax**2 + ay**2 + az**2);
 
-            // Soustraction de la gravité terrestre (9.81 m/s²) pour isoler l'impact dynamique pur
             let forceLineaire = magnitudeTotale - 9.80665;
             if (forceLineaire < 0) forceLineaire = 0;
 
             traiterAnalyseImpact(forceLineaire);
         }
 
-        // --- MOTEUR DE TRAITEMENT ET ANALYSE DE L'IMPACT ---
+        // --- MOTEUR DE TRAITEMENT ET CONVERSION FORCE (KG) ---
         function traiterAnalyseImpact(forceInstantanee) {
             if (modeActuel === 'reaction' && sequenceEnCours && !signalDonne) {
                 if (forceInstantanee > seuilDetection) {
@@ -549,8 +567,14 @@
                     }
 
                     setTimeout(() => {
-                        let scoreArrondi = Math.round(maxImpact); 
-                        affichageScore.innerText = scoreArrondi;
+                        // CONVERSION EN KILOS ARRONDIE : F = (m * a) / 9.80665
+                        let forceKilosBrute = (masseImpact * maxImpact) / 9.80665;
+                        let scoreKgArrondi = Math.round(forceKilosBrute);
+                        let accArrondie = Math.round(maxImpact);
+
+                        // Affichage à l'écran
+                        affichageScore.innerHTML = `${scoreKgArrondi}<span style="font-size:1.2rem; color:#888; font-weight:normal;"> kg</span>`;
+                        subScoreAcc.innerText = `${accArrondie} m/s²`;
                         
                         if (modeActuel === 'reaction' || modeActuel === 'combo') {
                             affichageReaction.innerText = tempsReactionCalcule.toFixed(3) + "s";
@@ -558,18 +582,22 @@
                             affichageReaction.innerText = "-.---s";
                         }
                         
-                        if (scoreArrondi > recordSession) {
-                            recordSession = scoreArrondi;
-                            affichageRecord.innerText = recordSession;
-                            if (modeActuel !== 'combo') annoncerTexte("Record " + scoreArrondi);
+                        // Gestion du Record en Kilos
+                        if (scoreKgArrondi > recordSessionKg) {
+                            recordSessionKg = scoreKgArrondi;
+                            affichageRecord.innerHTML = `${recordSessionKg}<span style="font-size:1.2rem; color:#888; font-weight:normal;"> kg</span>`;
+                            subRecordAcc.innerText = `${accArrondie} m/s²`;
+                            if (modeActuel !== 'combo') annoncerTexte("Record " + scoreKgArrondi + " kilos");
                         } else {
-                            if (modeActuel !== 'combo') annoncerTexte(scoreArrondi.toString());
+                            if (modeActuel !== 'combo') annoncerTexte(scoreKgArrondi + " kilos");
                         }
 
+                        // Enregistrement historique complet
                         compteurCoups++;
                         historiqueCoups.unshift({
                             numero: compteurCoups,
-                            force: scoreArrondi,
+                            kilos: scoreKgArrondi,
+                            acceleration: accArrondie,
                             reaction: (modeActuel === 'reaction' || modeActuel === 'combo') ? tempsReactionCalcule.toFixed(3) : null
                         });
 
@@ -578,7 +606,7 @@
                         }
                         
                         listeHistorique.innerHTML = historiqueCoups.map((coup) => {
-                            let details = `${coup.force} m/s²`;
+                            let details = `${coup.kilos} kg (${coup.acceleration} m/s²)`;
                             if (coup.reaction) details += ` / ⏱️ ${coup.reaction}s`;
                             return `<li><span>Coup n°${coup.numero}</span> <b>${details}</b></li>`;
                         }).join('');
@@ -615,7 +643,6 @@
             }
         }
 
-        // Contrôle de l'acquisition session globale (Marche / Arrêt)
         btnConfig.addEventListener('click', () => {
             if (!deviceBluetooth || !deviceBluetooth.gatt.connected) {
                 statut.innerText = "❌ Capteur Bluetooth non connecté.";
@@ -625,7 +652,7 @@
 
             if (!systemeActif) {
                 systemeActif = true;
-                decodageBuffer = []; // Remise à zéro du buffer
+                decodageBuffer = [];
                 btnConfig.innerText = "ARRÊTER";
                 btnConfig.classList.add('actif');
 
