@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -316,11 +316,12 @@
         let coupsRestantsCombo = 0;
         let comboEnCours = false;
 
-        // Variables Web Bluetooth
+        // Variables Web Bluetooth et Buffer de streaming
         let deviceBluetooth = null;
         let caractéristiqueBluetooth = null;
+        let decodageBuffer = [];
 
-        // UUIDs de communication standards des modules WitMotion (Services série-vers-BLE alternatifs)
+        // UUIDs de communication standards des modules WitMotion
         const WITMOTION_SERVICES = ['0000ffe0-0000-1000-8000-00805f9b34fb', '49535343-fe7d-4ae5-8fa9-9fafd205e455'];
 
         const slider = document.getElementById('sliderSensibilite');
@@ -399,7 +400,6 @@
                 statut.innerText = "Recherche des flux de données...";
                 let service = null;
                 
-                // Essai de connexion sur les différents profils de puces WitMotion possibles
                 for (const uuid of WITMOTION_SERVICES) {
                     try {
                         service = await server.getPrimaryService(uuid);
@@ -415,11 +415,10 @@
                 if (!caractéristiqueBluetooth) throw new Error("Flux de notification introuvable.");
 
                 await caractéristiqueBluetooth.startNotifications();
-                caractéristiqueBluetooth.addEventListener('characteristicvaluechanged', decoderDonneesBWT901CL);
+                caractéristiqueBluetooth.addEventListener('characteristicvaluechanged', accumulerEtFiltrerTrame);
                 deviceBluetooth.addEventListener('gattserverdisconnected', onBluetoothDisconnected);
 
-                // UI mise à jour : Capteur prêt
-                statut.innerText = "BWT901CL Connecté. Prêt à démarrer !";
+                statut.innerText = "BWT901CL Connecté. Cliquez sur DÉMARRER !";
                 statut.style.color = "#00ffcc";
                 btnBluetooth.innerText = "DÉCONNECTER LE CAPTEUR";
                 btnBluetooth.classList.add('ble-connecte');
@@ -442,42 +441,86 @@
             arreterSysteme();
         }
 
-        // Décodage du protocole binaire WitMotion BWT901CL
-        function decoderDonneesBWT901CL(event) {
-            if (!systemeActif) return;
+        // Reconstitution d'un entier signé 16 bits à partir de 2 octets (Little Endian)
+        function convertirEnInt16(low, high) {
+            let val = (high << 8) | low;
+            return val & 0x8000 ? val - 65536 : val;
+        }
 
+        // Ajout des données au buffer glissant pour éviter les pertes liées au découpage Bluetooth MTU
+        function accumulerEtFiltrerTrame(event) {
             const value = event.target.value;
-            const len = value.byteLength;
+            for (let i = 0; i < value.byteLength; i++) {
+                decodageBuffer.push(value.getUint8(i));
+            }
 
-            // Parcours de la trame pour trouver l'en-tête WitMotion de l'accélération (0x55 0x61)
-            for (let i = 0; i < len - 7; i++) {
-                if (value.getUint8(i) === 0x55 && value.getUint8(i + 1) === 0x61) {
-                    // Lecture des entiers signés sur 16 bits (Little Endian)
-                    const axRaw = value.getInt16(i + 2, true);
-                    const ayRaw = value.getInt16(i + 4, true);
-                    const azRaw = value.getInt16(i + 6, true);
+            // Si l'acquisition n'est pas lancée via "DÉMARRER", on vide le buffer pour éviter d'accumuler du retard
+            if (!systemeActif) {
+                decodageBuffer = [];
+                return;
+            }
 
-                    // Formule constructeur : (Raw / 32768) * 16g * 9.80665 pour passer en m/s²
-                    const ax = (axRaw / 32768.0) * 16.0 * 9.80665;
-                    const ay = (ayRaw / 32768.0) * 16.0 * 9.80665;
-                    const az = (azRaw / 32768.0) * 16.0 * 9.80665;
+            // Analyse de l'historique du flux d'octets
+            while (decodageBuffer.length >= 2) {
+                // Tout paquet WitMotion valide commence par l'en-tête 0x55
+                if (decodageBuffer[0] !== 0x55) {
+                    decodageBuffer.shift();
+                    continue;
+                }
 
-                    // Calcul de la magnitude totale brute (incluant la gravité terrestre)
-                    const magnitudeTotale = Math.sqrt(ax**2 + ay**2 + az**2);
+                const flagPaquet = decodageBuffer[1];
 
-                    // Soustraction de la gravité terrestre (~9.81 m/s²) pour isoler l'accélération linéaire de l'impact
-                    let forceLinear = magnitudeTotale - 9.80665;
-                    if (forceLinear < 0) forceLinear = 0;
+                // CAS 1 : Trame groupée BLE 5.0 (0x55 0x61) - Requis : 20 octets au total
+                if (flagPaquet === 0x61) {
+                    if (decodageBuffer.length < 20) break; // Paquet incomplet, on attend la suite
 
-                    traiterAnalyseImpact(forceLinear);
-                    break; 
+                    const axRaw = convertirEnInt16(decodageBuffer[2], decodageBuffer[3]);
+                    const ayRaw = convertirEnInt16(decodageBuffer[4], decodageBuffer[5]);
+                    const azRaw = convertirEnInt16(decodageBuffer[6], decodageBuffer[7]);
+
+                    analyserAccelerationBrute(axRaw, ayRaw, azRaw);
+                    decodageBuffer.splice(0, 20); // Nettoyage de la trame traitée
+                } 
+                // CAS 2 : Trame d'accélération seule BLE 4.0 (0x55 0x51) - Requis : 11 octets
+                else if (flagPaquet === 0x51) {
+                    if (decodageBuffer.length < 11) break; 
+
+                    const axRaw = convertirEnInt16(decodageBuffer[2], decodageBuffer[3]);
+                    const ayRaw = convertirEnInt16(decodageBuffer[4], decodageBuffer[5]);
+                    const azRaw = convertirEnInt16(decodageBuffer[6], decodageBuffer[7]);
+
+                    analyserAccelerationBrute(axRaw, ayRaw, azRaw);
+                    decodageBuffer.splice(0, 11);
+                } 
+                // CAS 3 : Autres types de trames série redondantes (Vitesse angulaire 0x52, Angles 0x53...)
+                else if (flagPaquet === 0x52 || flagPaquet === 0x53 || flagPaquet === 0x54) {
+                    if (decodageBuffer.length < 11) break; 
+                    decodageBuffer.splice(0, 11); // On ignore les angles pour libérer de la mémoire
+                } 
+                else {
+                    // En-tête invalide ou corrompu
+                    decodageBuffer.shift();
                 }
             }
         }
 
-        // --- MOTEUR DE TRAITEMENT ET ANALYSE DU SOUFFLE / IMPACT ---
+        function analyserAccelerationBrute(axRaw, ayRaw, azRaw) {
+            // Formule constructeur WitMotion (Échelle par défaut à ±16g) convertie en m/s²
+            const ax = (axRaw / 32768.0) * 16.0 * 9.80665;
+            const ay = (ayRaw / 32768.0) * 16.0 * 9.80665;
+            const az = (azRaw / 32768.0) * 16.0 * 9.80665;
+
+            const magnitudeTotale = Math.sqrt(ax**2 + ay**2 + az**2);
+
+            // Soustraction de la gravité terrestre (9.81 m/s²) pour isoler l'impact dynamique pur
+            let forceLineaire = magnitudeTotale - 9.80665;
+            if (forceLineaire < 0) forceLineaire = 0;
+
+            traiterAnalyseImpact(forceLineaire);
+        }
+
+        // --- MOTEUR DE TRAITEMENT ET ANALYSE DE L'IMPACT ---
         function traiterAnalyseImpact(forceInstantanee) {
-            // GESTION DU FAUX DÉPART (Uniquement en mode réaction)
             if (modeActuel === 'reaction' && sequenceEnCours && !signalDonne) {
                 if (forceInstantanee > seuilDetection) {
                     clearTimeout(timeoutSignal);
@@ -493,9 +536,7 @@
                 return; 
             }
 
-            // DÉTECTION DU COUP VALIDE
             if (modeActuel === 'libre' || (modeActuel === 'reaction' && signalDonne) || (modeActuel === 'combo' && comboEnCours)) {
-                
                 if (!enTrainDeFrapper && forceInstantanee > seuilDetection) {
                     enTrainDeFrapper = true;
                     maxImpact = forceInstantanee;
@@ -584,6 +625,7 @@
 
             if (!systemeActif) {
                 systemeActif = true;
+                decodageBuffer = []; // Remise à zéro du buffer
                 btnConfig.innerText = "ARRÊTER";
                 btnConfig.classList.add('actif');
 
