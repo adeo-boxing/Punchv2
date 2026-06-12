@@ -300,15 +300,21 @@
                     </select>
                 </div>
 
+                <label for="selectEmplacement">Emplacement du capteur :</label>
+                <select id="selectEmplacement">
+                    <option value="poignet" selected>Fixé au Poignet / Gant</option>
+                    <option value="cible">Fixé directement sur la Cible</option>
+                </select>
+
                 <label for="selectSupport">Support utilisé :</label>
                 <select id="selectSupport">
                     <option value="sac">Sac Suspendu (Mobile)</option>
-                    <option value="mur">Cible Murale (Fixe)</option>
+                    <option value="mur" selected>Cible Murale / Mousse (Fixe)</option>
                 </select>
 
                 <label for="inputMasse">Masse virtuelle d'impact (kg) :</label>
                 <input type="number" id="inputMasse" value="3.0" step="0.1" min="0.1">
-                <div class="info" style="margin-bottom: 15px;">Masse estimée de la frappe. Ajustez : ~3.0kg au poignet, ~1.5kg sur cible murale + mousse dense.</div>
+                <div class="info" id="infoMasse" style="margin-bottom: 15px;">Masse conseillée par défaut. Vous pouvez l'ajuster manuellement pour calibrer vos scores.</div>
 
                 <label for="sliderSensibilite">Seuil de choc :</label>
                 <input type="range" id="sliderSensibilite" min="5" max="50" value="15">
@@ -318,9 +324,11 @@
     </div>
 
     <script>
+        // Valeurs d'initialisation (par défaut : Poignet + Cible Murale)
         let seuilDetection = 15; 
-        let dureeFenetreImpact = 100; 
-        let tempsAttenteAntiRebond = 1000; 
+        let dureeFenetreImpact = 30; 
+        let tempsAttenteAntiRebond = 500; 
+        let masseImpact = 3.0;
         
         let modeActuel = 'libre'; 
         let systemeActif = false; 
@@ -329,7 +337,6 @@
         let recordSessionKg = 0;
         let historiqueCoups = [];
         let compteurCoups = 0;
-        let masseImpact = 3.0;
 
         // Gestion de la réaction
         let sequenceEnCours = false;
@@ -351,6 +358,7 @@
 
         const slider = document.getElementById('sliderSensibilite');
         const valeurSeuilText = document.getElementById('valeurSeuil');
+        const selectEmplacement = document.getElementById('selectEmplacement');
         const selectSupport = document.getElementById('selectSupport');
         const inputMasse = document.getElementById('inputMasse');
         const selectMode = document.getElementById('selectMode');
@@ -379,22 +387,50 @@
             if (!isNaN(val) && val > 0) masseImpact = val;
         });
 
-        selectSupport.addEventListener('change', (e) => {
-            if (e.target.value === 'sac') {
-                dureeFenetreImpact = 100;    
-                tempsAttenteAntiRebond = 1000; 
-                slider.value = 15;
-                inputMasse.value = "3.0";
-            } else if (e.target.value === 'mur') {
-                dureeFenetreImpact = 30;     
-                tempsAttenteAntiRebond = 500;  
-                slider.value = 10;          
-                inputMasse.value = "1.5";
+        // --- MATRICE DE CONFIGURATION DYNAMIQUE ---
+        function actualiserConfigurationPhysique() {
+            const emplacement = selectEmplacement.value;
+            const support = selectSupport.value;
+
+            if (emplacement === 'poignet') {
+                if (support === 'sac') {
+                    // Poignet + Sac : Impact amorti, décélération moyenne
+                    dureeFenetreImpact = 100;    
+                    tempsAttenteAntiRebond = 1000; 
+                    slider.value = 15;
+                    inputMasse.value = "4.0"; // Moyenne arrondie entre 3.5 et 4.5 kg
+                } else if (support === 'mur') {
+                    // Poignet + Mur : Arrêt instantané, forte décélération
+                    dureeFenetreImpact = 30;     
+                    tempsAttenteAntiRebond = 500;  
+                    slider.value = 15;          
+                    inputMasse.value = "3.0";
+                }
+            } else if (emplacement === 'cible') {
+                if (support === 'sac') {
+                    // Sur cible + Sac : Mise en mouvement d'une masse lourde, accélération faible
+                    dureeFenetreImpact = 100;    
+                    tempsAttenteAntiRebond = 1000; 
+                    slider.value = 10;
+                    inputMasse.value = "8.0";
+                } else if (support === 'mur') {
+                    // Sur cible + Mur : Compression locale ultra-rapide
+                    dureeFenetreImpact = 30;     
+                    tempsAttenteAntiRebond = 500;  
+                    slider.value = 10;          
+                    inputMasse.value = "1.5";
+                }
             }
+
+            // Application immédiate des variables calculées
             seuilDetection = parseFloat(slider.value);
             valeurSeuilText.innerText = seuilDetection;
             masseImpact = parseFloat(inputMasse.value);
-        });
+        }
+
+        // Écouteurs sur la configuration physique
+        selectEmplacement.addEventListener('change', actualiserConfigurationPhysique);
+        selectSupport.addEventListener('change', actualiserConfigurationPhysique);
 
         selectMode.addEventListener('change', (e) => {
             modeActuel = e.target.value;
@@ -492,7 +528,6 @@
                 decodageBuffer.push(value.getUint8(i));
             }
 
-            // On traite le buffer même si le système est en veille pour faire fonctionner le moniteur de flux direct
             while (decodageBuffer.length >= 2) {
                 if (decodageBuffer[0] !== 0x55) {
                     decodageBuffer.shift();
@@ -515,7 +550,7 @@
                     if (decodageBuffer.length < 11) break; 
 
                     const axRaw = convertirEnInt16(decodageBuffer[2], decodageBuffer[3]);
-                    const ayRaw = convertirEnInt16(decodageBuffer[4], decodageBuffer[5]); // REPARÉ : Correction de la double imbrication
+                    const ayRaw = convertirEnInt16(decodageBuffer[4], decodageBuffer[5]); 
                     const azRaw = convertirEnInt16(decodageBuffer[6], decodageBuffer[7]);
 
                     analyserAccelerationBrute(axRaw, ayRaw, azRaw);
@@ -541,10 +576,8 @@
             let forceLineaire = magnitudeTotale - 9.80665;
             if (forceLineaire < 0) forceLineaire = 0;
 
-            // Affichage de contrôle en temps réel (limité à 1 chiffre après la virgule pour la lisibilité)
             valeurDirect.innerText = forceLineaire.toFixed(1);
 
-            // Si l'acquisition globale n'est pas activée, on s'arrête là
             if (!systemeActif) return;
 
             traiterAnalyseImpact(forceLineaire);
@@ -745,6 +778,9 @@
             tempsSignal = performance.now(); 
             annoncerTexte(chiffreAleatoire.toString());
         }
+
+        // Lancement d'une première actualisation au chargement de la page
+        actualiserConfigurationPhysique();
     </script>
 </body>
 </html>
