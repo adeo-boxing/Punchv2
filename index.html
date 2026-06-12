@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -280,6 +281,17 @@
                 <span class="chevron">▼</span>
             </summary>
             <div class="details-content">
+                <label for="selectPosition">Emplacement du capteur :</label>
+<select id="selectPosition">
+    <option value="poignet" selected>Fixé au poignet</option>
+    <option value="cible">Fixé sur la cible (Sac ou Mur)</option>
+</select>
+
+<label for="selectSupport">Support utilisé :</label>
+<select id="selectSupport">
+    <option value="sac">Sac Suspendu (Mobile)</option>
+    <option value="mur">Cible Murale (Fixe)</option>
+</select>
                 <label for="selectMode">Mode de fonctionnement :</label>
                 <select id="selectMode">
                     <option value="libre">Entraînement Libre (Continu)</option>
@@ -744,6 +756,45 @@
             tempsSignal = performance.now(); 
             annoncerTexte(chiffreAleatoire.toString());
         }
+        
+        // Sélection des éléments du DOM
+const selectPosition = document.getElementById('selectPosition');
+const selectSupport = document.getElementById('selectSupport');
+const inputMasse = document.getElementById('inputMasse');
+
+// Matrice des masses par défaut [Position][Support]
+const matriceMasses = {
+    poignet: {
+        mur: 3.0, // Choc très sec, forte décélération
+        sac: 4.0  // Choc amorti, décélération plus faible
+    },
+    cible: {
+        mur: 1.5, // Compression locale de la mousse
+        sac: 10.0 // Inertie et mise en mouvement d'un sac lourd
+    }
+};
+
+// Fonction de mise à jour automatique
+function ajusterMasseAutomatique() {
+    const position = selectPosition.value;
+    const support = selectSupport.value;
+    
+    // Récupération de la valeur idéale dans la matrice
+    const nouvelleMasse = matriceMasses[position][support];
+    
+    // Mise à jour de l'input text/number
+    inputMasse.value = nouvelleMasse.toFixed(1);
+    
+    // Optionnel : un petit effet visuel ou log console pour confirmer le changement
+    console.log(`Profil mis à jour : Capteur au ${position} + ${support}. Masse réglée à ${nouvelleMasse}kg.`);
+}
+
+// Écouteurs d'événements pour détecter les changements de l'utilisateur
+selectPosition.addEventListener('change', ajusterMasseAutomatique);
+selectSupport.addEventListener('change', ajusterMasseAutomatique);
+
+// Exécuter une fois au chargement pour initialiser avec les bonnes valeurs
+ajusterMasseAutomatique();
     </script>
 </body>
 </html>
