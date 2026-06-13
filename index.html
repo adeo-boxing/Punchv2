@@ -312,9 +312,12 @@
                     <option value="mur" selected>Cible Murale / Mousse (Fixe)</option>
                 </select>
 
-                <label for="inputMasse">Masse virtuelle d'impact (kg) :</label>
-                <input type="number" id="inputMasse" value="3.0" step="0.1" min="0.1">
-                <div class="info" id="infoMasse" style="margin-bottom: 15px;">Masse conseillée par défaut. Vous pouvez l'ajuster manuellement pour calibrer vos scores.</div>
+                <label for="inputPoidsCorps">Votre poids corporel (kg) :</label>
+                <input type="number" id="inputPoidsCorps" value="80" step="1" min="30">
+
+                <label for="inputMasse">Masse effective d'impact calculée (kg) :</label>
+                <input type="number" id="inputMasse" value="16.0" step="0.1" min="0.1" readonly>
+                <div class="info" id="infoMasse" style="margin-bottom: 15px;">Calculée automatiquement (environ 20% du poids) au poignet pour inclure le transfert de masse du corps. Modifiable si le capteur est sur la cible.</div>
 
                 <label for="sliderSensibilite">Seuil de choc :</label>
                 <input type="range" id="sliderSensibilite" min="5" max="50" value="15">
@@ -324,11 +327,11 @@
     </div>
 
     <script>
-        // Valeurs d'initialisation (par défaut : Poignet + Cible Murale)
+        // Valeurs d'initialisation
         let seuilDetection = 15; 
         let dureeFenetreImpact = 30; 
         let tempsAttenteAntiRebond = 500; 
-        let masseImpact = 3.0;
+        let masseImpact = 16.0;
         
         let modeActuel = 'libre'; 
         let systemeActif = false; 
@@ -360,6 +363,7 @@
         const valeurSeuilText = document.getElementById('valeurSeuil');
         const selectEmplacement = document.getElementById('selectEmplacement');
         const selectSupport = document.getElementById('selectSupport');
+        const inputPoidsCorps = document.getElementById('inputPoidsCorps');
         const inputMasse = document.getElementById('inputMasse');
         const selectMode = document.getElementById('selectMode');
         const wrapperCombo = document.getElementById('wrapperCombo');
@@ -387,34 +391,40 @@
             if (!isNaN(val) && val > 0) masseImpact = val;
         });
 
-        // --- MATRICE DE CONFIGURATION DYNAMIQUE ---
+        // Réactivation de la modification manuelle si besoin (uniquement en mode cible)
+        inputPoidsCorps.addEventListener('input', actualiserConfigurationPhysique);
+
+        // --- MATRICE DE CONFIGURATION DYNAMIQUE BIOMÉCANIQUE ---
         function actualiserConfigurationPhysique() {
             const emplacement = selectEmplacement.value;
             const support = selectSupport.value;
+            const poidsCorps = parseFloat(inputPoidsCorps.value) || 80;
 
             if (emplacement === 'poignet') {
+                inputMasse.readOnly = true;
+                // Masse effective = ~20% du poids de corps transféré lors de l'impact
+                let masseEffectiveBase = poidsCorps * 0.20; 
+
                 if (support === 'sac') {
-                    // Poignet + Sac : Impact amorti, décélération moyenne
                     dureeFenetreImpact = 100;    
                     tempsAttenteAntiRebond = 1000; 
                     slider.value = 15;
-                    inputMasse.value = "4.0"; // Moyenne arrondie entre 3.5 et 4.5 kg
+                    // Léger amorti du sac réduisant la masse effective d'impact direct transmise au capteur
+                    inputMasse.value = (masseEffectiveBase * 0.85).toFixed(1); 
                 } else if (support === 'mur') {
-                    // Poignet + Mur : Arrêt instantané, forte décélération
                     dureeFenetreImpact = 30;     
                     tempsAttenteAntiRebond = 500;  
                     slider.value = 15;          
-                    inputMasse.value = "3.0";
+                    inputMasse.value = masseEffectiveBase.toFixed(1);
                 }
             } else if (emplacement === 'cible') {
+                inputMasse.readOnly = false; // L'utilisateur peut calibrer manuellement la masse propre de la cible
                 if (support === 'sac') {
-                    // Sur cible + Sac : Mise en mouvement d'une masse lourde, accélération faible
                     dureeFenetreImpact = 100;    
                     tempsAttenteAntiRebond = 1000; 
                     slider.value = 10;
                     inputMasse.value = "8.0";
                 } else if (support === 'mur') {
-                    // Sur cible + Mur : Compression locale ultra-rapide
                     dureeFenetreImpact = 30;     
                     tempsAttenteAntiRebond = 500;  
                     slider.value = 10;          
