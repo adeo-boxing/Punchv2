@@ -391,7 +391,6 @@
             if (!isNaN(val) && val > 0) masseImpact = val;
         });
 
-        // Réactivation de la modification manuelle si besoin (uniquement en mode cible)
         inputPoidsCorps.addEventListener('input', actualiserConfigurationPhysique);
 
         // --- MATRICE DE CONFIGURATION DYNAMIQUE BIOMÉCANIQUE ---
@@ -402,14 +401,12 @@
 
             if (emplacement === 'poignet') {
                 inputMasse.readOnly = true;
-                // Masse effective = ~20% du poids de corps transféré lors de l'impact
                 let masseEffectiveBase = poidsCorps * 0.20; 
 
                 if (support === 'sac') {
                     dureeFenetreImpact = 100;    
                     tempsAttenteAntiRebond = 1000; 
                     slider.value = 15;
-                    // Léger amorti du sac réduisant la masse effective d'impact direct transmise au capteur
                     inputMasse.value = (masseEffectiveBase * 0.85).toFixed(1); 
                 } else if (support === 'mur') {
                     dureeFenetreImpact = 30;     
@@ -418,7 +415,7 @@
                     inputMasse.value = masseEffectiveBase.toFixed(1);
                 }
             } else if (emplacement === 'cible') {
-                inputMasse.readOnly = false; // L'utilisateur peut calibrer manuellement la masse propre de la cible
+                inputMasse.readOnly = false; 
                 if (support === 'sac') {
                     dureeFenetreImpact = 100;    
                     tempsAttenteAntiRebond = 1000; 
@@ -432,13 +429,11 @@
                 }
             }
 
-            // Application immédiate des variables calculées
             seuilDetection = parseFloat(slider.value);
             valeurSeuilText.innerText = seuilDetection;
             masseImpact = parseFloat(inputMasse.value);
         }
 
-        // Écouteurs sur la configuration physique
         selectEmplacement.addEventListener('change', actualiserConfigurationPhysique);
         selectSupport.addEventListener('change', actualiserConfigurationPhysique);
 
@@ -532,13 +527,15 @@
             return val & 0x8000 ? val - 65536 : val;
         }
 
+        // --- FILTRAGE ET CONTRÔLE PAR CHECKSUM (CORRECTIONS DES COUPS FANTÔMES) ---
         function accumulerEtFiltrerTrame(event) {
             const value = event.target.value;
             for (let i = 0; i < value.byteLength; i++) {
                 decodageBuffer.push(value.getUint8(i));
             }
 
-            while (decodageBuffer.length >= 2) {
+            // Un paquet WitMotion standard fait 11 octets
+            while (decodageBuffer.length >= 11) {
                 if (decodageBuffer[0] !== 0x55) {
                     decodageBuffer.shift();
                     continue;
@@ -546,7 +543,37 @@
 
                 const flagPaquet = decodageBuffer[1];
 
-                if (flagPaquet === 0x61) {
+                // On vérifie si c'est un identifiant connu (0x51, 0x52, 0x53, 0x54)
+                if (flagPaquet === 0x51 || flagPaquet === 0x52 || flagPaquet === 0x53 || flagPaquet === 0x54) {
+                    
+                    // CALCUL ET VÉRIFICATION DU CHECKSUM
+                    let checksumCalcule = 0;
+                    for (let i = 0; i < 10; i++) {
+                        checksumCalcule += decodageBuffer[i];
+                    }
+                    checksumCalcule = checksumCalcule & 0xFF;
+
+                    // Si le checksum est invalide, ce n'est pas une vraie trame. 
+                    // On décale pour éliminer le faux en-tête.
+                    if (checksumCalcule !== decodageBuffer[10]) {
+                        decodageBuffer.shift();
+                        continue;
+                    }
+
+                    // Le paquet est 100% intègre. On extrait s'il s'agit de l'accélération (0x51)
+                    if (flagPaquet === 0x51) {
+                        const axRaw = convertirEnInt16(decodageBuffer[2], decodageBuffer[3]);
+                        const ayRaw = convertirEnInt16(decodageBuffer[4], decodageBuffer[5]);
+                        const azRaw = convertirEnInt16(decodageBuffer[6], decodageBuffer[7]);
+
+                        analyserAccelerationBrute(axRaw, ayRaw, azRaw);
+                    }
+
+                    // On supprime le paquet de 11 octets correctement traité
+                    decodageBuffer.splice(0, 11);
+                } 
+                // Paquet étendu haute précision (20 octets)
+                else if (flagPaquet === 0x61) {
                     if (decodageBuffer.length < 20) break; 
 
                     const axRaw = convertirEnInt16(decodageBuffer[2], decodageBuffer[3]);
@@ -556,33 +583,22 @@
                     analyserAccelerationBrute(axRaw, ayRaw, azRaw);
                     decodageBuffer.splice(0, 20); 
                 } 
-                else if (flagPaquet === 0x51) {
-                    if (decodageBuffer.length < 11) break; 
-
-                    const axRaw = convertirEnInt16(decodageBuffer[2], decodageBuffer[3]);
-                    const ayRaw = convertirEnInt16(decodageBuffer[4], decodageBuffer[5]); 
-                    const azRaw = convertirEnInt16(decodageBuffer[6], decodageBuffer[7]);
-
-                    analyserAccelerationBrute(axRaw, ayRaw, azRaw);
-                    decodageBuffer.splice(0, 11);
-                } 
-                else if (flagPaquet === 0x52 || flagPaquet === 0x53 || flagPaquet === 0x54) {
-                    if (decodageBuffer.length < 11) break; 
-                    decodageBuffer.splice(0, 11); 
-                } 
                 else {
+                    // Flag inconnu, on décale d'un octet pour chercher le prochain 0x55
                     decodageBuffer.shift();
                 }
             }
         }
 
         function analyserAccelerationBrute(axRaw, ayRaw, azRaw) {
+            // Échelle par défaut WitMotion : +/-16g
             const ax = (axRaw / 32768.0) * 16.0 * 9.80665;
             const ay = (ayRaw / 32768.0) * 16.0 * 9.80665;
             const az = (azRaw / 32768.0) * 16.0 * 9.80665;
 
             const magnitudeTotale = Math.sqrt(ax**2 + ay**2 + az**2);
 
+            // Retrait de la gravité terrestre (9.81 m/s²)
             let forceLineaire = magnitudeTotale - 9.80665;
             if (forceLineaire < 0) forceLineaire = 0;
 
@@ -789,7 +805,6 @@
             annoncerTexte(chiffreAleatoire.toString());
         }
 
-        // Lancement d'une première actualisation au chargement de la page
         actualiserConfigurationPhysique();
     </script>
 </body>
