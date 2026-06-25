@@ -336,7 +336,7 @@
     <script>
         // Valeurs d'initialisation (s'alignent sur Poignet + Cible Murale par défaut)
         let seuilDetection = 45; 
-        let dureeFenetreImpact = 30; 
+        let dureeFenetreImpact = 35; 
         let tempsAttenteAntiRebond = 800; 
         let masseImpact = 16.0;
         
@@ -344,6 +344,7 @@
         let systemeActif = false; 
         let enTrainDeFrapper = false;
         let maxImpact = 0;
+        let valeursImpactSequence = []; // Buffer pour lissage de la fenêtre d'impact
         let recordSessionKg = 0;
         let historiqueCoups = [];
         let compteurCoups = 0;
@@ -419,10 +420,12 @@
                     slider.value = 35;             
                     inputMasse.value = (masseEffectiveBase * 0.85).toFixed(1); 
                 } else if (support === 'mur') {
-                    dureeFenetreImpact = 30;     
+                    dureeFenetreImpact = 35;     
                     tempsAttenteAntiRebond = 800;  
                     slider.value = 45;             
-                    inputMasse.value = masseEffectiveBase.toFixed(1);
+                    // Application d'un coefficient d'atténuation de structure indéformable (0.7)
+                    // pour compenser le retour d'onde rigide gant/mur fixe
+                    inputMasse.value = (masseEffectiveBase * 0.70).toFixed(1);
                 }
             } else if (emplacement === 'cible') {
                 inputMasse.readOnly = false; 
@@ -432,7 +435,7 @@
                     slider.value = 15;             
                     inputMasse.value = "8.0";
                 } else if (support === 'mur') {
-                    dureeFenetreImpact = 30;     
+                    dureeFenetreImpact = 35;     
                     tempsAttenteAntiRebond = 500;  
                     slider.value = 12;             
                     inputMasse.value = "1.5";
@@ -607,7 +610,7 @@
             traiterAnalyseImpact(forceLineaire);
         }
 
-        // --- MOTEUR DE TRAITEMENT ET CONVERSION FORCE (KG) ---
+        // --- MOTEUR DE TRAITEMENT ET CONVERSION FORCE (KG) AVEC LISSAGE ---
         function traiterAnalyseImpact(forceInstantanee) {
             if (modeActuel === 'reaction' && sequenceEnCours && !signalDonne) {
                 if (forceInstantanee > seuilDetection) {
@@ -628,6 +631,7 @@
                 if (!enTrainDeFrapper && forceInstantanee > seuilDetection) {
                     enTrainDeFrapper = true;
                     maxImpact = forceInstantanee;
+                    valeursImpactSequence = [forceInstantanee]; // On commence à stocker les accélérations du choc
                     statut.innerText = "💥 IMPACT !";
                     statut.style.color = "#ff3366";
 
@@ -637,12 +641,20 @@
                     }
 
                     setTimeout(() => {
-                        let forceKilosBrute = (masseImpact * maxImpact) / 9.80665;
+                        // Lissage : Calcul de l'accélération moyenne sur la durée totale de la fenêtre d'impact
+                        let sommeAcc = 0;
+                        for (let i = 0; i < valeursImpactSequence.length; i++) {
+                            sommeAcc += valeursImpactSequence[i];
+                        }
+                        let accMoyenneLissee = valeursImpactSequence.length > 0 ? (sommeAcc / valeursImpactSequence.length) : maxImpact;
+
+                        // Calcul de la force réelle basée sur l'accélération moyenne lissée (absorbe le pic vibratoire structurel)
+                        let forceKilosBrute = (masseImpact * accMoyenneLissee) / 9.80665;
                         let scoreKgArrondi = Math.round(forceKilosBrute);
-                        let accArrondie = Math.round(maxImpact);
+                        let accBruteArrondie = Math.round(maxImpact); // On garde l'affichage de la crête maximale en m/s²
 
                         affichageScore.innerHTML = `${scoreKgArrondi}<span style="font-size:1.2rem; color:#888; font-weight:normal;"> kg</span>`;
-                        subScoreAcc.innerText = `${accArrondie} m/s²`;
+                        subScoreAcc.innerText = `${accBruteArrondie} m/s²`;
                         
                         if (modeActuel === 'reaction' || modeActuel === 'combo') {
                             affichageReaction.innerText = tempsReactionCalcule.toFixed(3) + "s";
@@ -653,7 +665,7 @@
                         if (scoreKgArrondi > recordSessionKg) {
                             recordSessionKg = scoreKgArrondi;
                             affichageRecord.innerHTML = `${recordSessionKg}<span style="font-size:1.2rem; color:#888; font-weight:normal;"> kg</span>`;
-                            subRecordAcc.innerText = `${accArrondie} m/s²`;
+                            subRecordAcc.innerText = `${accBruteArrondie} m/s²`;
                             if (modeActuel !== 'combo') annoncerTexte("Record " + scoreKgArrondi + " kilos");
                         } else {
                             if (modeActuel !== 'combo') annoncerTexte(scoreKgArrondi + " kilos");
@@ -663,7 +675,7 @@
                         historiqueCoups.unshift({
                             numero: compteurCoups,
                             kilos: scoreKgArrondi,
-                            acceleration: accArrondie,
+                            acceleration: accBruteArrondie,
                             reaction: (modeActuel === 'reaction' || modeActuel === 'combo') ? tempsReactionCalcule.toFixed(3) : null
                         });
 
@@ -679,6 +691,7 @@
 
                         setTimeout(() => {
                             enTrainDeFrapper = false;
+                            valeursImpactSequence = [];
                             if (systemeActif) {
                                 if (modeActuel === 'libre') {
                                     statut.innerText = "En attente du coup suivant...";
@@ -703,8 +716,12 @@
 
                     }, dureeFenetreImpact);
                 } 
-                else if (enTrainDeFrapper && forceInstantanee > maxImpact) {
-                    maxImpact = forceInstantanee;
+                else if (enTrainDeFrapper) {
+                    // Accumulation continue de toutes les trames reçues à 200 Hz durant la fenêtre d'impact
+                    valeursImpactSequence.push(forceInstantanee);
+                    if (forceInstantanee > maxImpact) {
+                        maxImpact = forceInstantanee;
+                    }
                 }
             }
         }
@@ -719,6 +736,7 @@
             if (!systemeActif) {
                 systemeActif = true;
                 decodageBuffer = [];
+                valeursImpactSequence = [];
                 btnConfig.innerText = "ARRÊTER";
                 btnConfig.classList.add('actif');
 
@@ -742,6 +760,7 @@
             signalDonne = false;
             enTrainDeFrapper = false;
             comboEnCours = false;
+            valeursImpactSequence = [];
             if (timeoutSignal) clearTimeout(timeoutSignal);
             
             btnConfig.innerText = "DÉMARRER";
