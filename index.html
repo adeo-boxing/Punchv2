@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PunchMeter Pro - Mobile & BWT901CL</title>
+    <title>PunchMeter Pro - Performance G-Force</title>
     <style>
         /* Base de la page adaptée au tactile */
         body { 
@@ -29,17 +29,8 @@
             box-sizing: border-box;
         }
 
-        h1 { 
-            color: #00ffcc; 
-            margin-top: 0; 
-            font-size: 1.8rem; 
-        }
-
-        h3 {
-            margin-top: 0;
-            font-size: 1.2rem;
-            color: #aaa;
-        }
+        h1 { color: #00ffcc; margin-top: 0; font-size: 1.8rem; }
+        h3 { margin-top: 0; font-size: 1.2rem; color: #aaa; }
         
         /* Conteneur de stats ajusté pour 3 colonnes */
         .stats-container { 
@@ -50,188 +41,57 @@
             gap: 5px;
         }
 
-        .score-box { 
-            flex: 1; 
-            padding: 5px 2px;
-        }
-
+        .score-box { flex: 1; padding: 5px 2px; }
         .score-label { 
-            font-size: 0.75rem; 
-            color: #888; 
-            text-transform: uppercase; 
-            letter-spacing: 1px; 
-            margin-bottom: 5px;
+            font-size: 0.75rem; color: #888; text-transform: uppercase; 
+            letter-spacing: 1px; margin-bottom: 5px;
         }
 
-        /* Chiffres sans virgules */
-        .score { 
-            font-size: 2.5rem; 
-            font-weight: bold; 
-            color: #ff3366; 
-            line-height: 1.1;
-        }
-
-        .record { 
-            font-size: 2.5rem; 
-            font-weight: bold; 
-            color: #ffcc00; 
-            line-height: 1.1;
-        }
-
-        .reaction-val {
-            font-size: 2.5rem; 
-            font-weight: bold; 
-            color: #00ffcc; 
-            line-height: 1.1;
-        }
-
-        .sub-val {
-            font-size: 0.8rem;
-            color: #666;
-            margin-top: 2px;
-        }
+        /* Affichage des métriques */
+        .score { font-size: 2.5rem; font-weight: bold; color: #ff3366; line-height: 1.1; }
+        .record { font-size: 2.5rem; font-weight: bold; color: #ffcc00; line-height: 1.1; }
+        .reaction-val { font-size: 2.5rem; font-weight: bold; color: #00ffcc; line-height: 1.1; }
+        .sub-val { font-size: 0.9rem; color: #aaa; margin-top: 4px; font-weight: 500; }
 
         /* Formulaires et listes */
-        label { 
-            display: block; 
-            margin: 18px 0 8px; 
-            font-weight: bold; 
-            text-align: left; 
-            font-size: 1rem;
-        }
-
+        label { display: block; margin: 18px 0 8px; font-weight: bold; text-align: left; font-size: 1rem; }
         select, input[type="number"] { 
-            width: 100%; 
-            padding: 14px; 
-            font-size: 1rem;
-            border-radius: 8px; 
-            border: none; 
-            background: #2a2a2a; 
-            color: white; 
-            box-sizing: border-box;
+            width: 100%; padding: 14px; font-size: 1rem; border-radius: 8px; 
+            border: none; background: #2a2a2a; color: white; box-sizing: border-box;
         }
+        select { appearance: none; }
+        input[type="range"] { width: 100%; margin: 15px 0; height: 8px; border-radius: 5px; background: #2a2a2a; }
 
-        select {
-            appearance: none; 
-        }
-
-        input[type="range"] { 
-            width: 100%; 
-            margin: 15px 0;
-            height: 8px;
-            border-radius: 5px;
-            background: #2a2a2a;
-        }
-
-        /* Bouton d'action principal tactile et dynamique */
+        /* Boutons */
         button { 
-            background: #00ffcc; 
-            color: #121212; 
-            border: none; 
-            padding: 18px 30px; 
-            font-size: 1.2rem; 
-            font-weight: bold; 
-            border-radius: 12px; 
-            cursor: pointer; 
-            width: 100%; 
-            box-shadow: 0 4px 10px rgba(0, 255, 204, 0.2);
+            background: #00ffcc; color: #121212; border: none; padding: 18px 30px; 
+            font-size: 1.2rem; font-weight: bold; border-radius: 12px; cursor: pointer; 
+            width: 100%; box-shadow: 0 4px 10px rgba(0, 255, 204, 0.2);
             transition: background 0.2s, color 0.2s;
         }
+        button.ble-btn { background: #ffcc00; margin-bottom: 12px; box-shadow: 0 4px 10px rgba(255, 204, 0, 0.2); }
+        button.ble-connecte { background: #1a3a3a; color: #00ffcc; border: 1px solid #00ffcc; box-shadow: none; }
+        button.actif { background: #ff3366; color: white; box-shadow: 0 4px 10px rgba(255, 51, 102, 0.2); }
+        button:active { transform: scale(0.98); }
+        button:disabled { background: #444; color: #666; cursor: not-allowed; box-shadow: none; }
 
-        /* Bouton Bluetooth spécifique */
-        button.ble-btn {
-            background: #ffcc00;
-            margin-bottom: 12px;
-            box-shadow: 0 4px 10px rgba(255, 204, 0, 0.2);
-        }
+        .info { color: #aaa; font-size: 0.9rem; text-align: left; margin-top: 5px; }
+        #statut { font-size: 1.1rem; color: #ffcc00; font-weight: 500; margin: 15px 0 5px 0; }
+        #moniteurDirect { font-size: 0.9rem; color: #888; margin-bottom: 15px; }
 
-        button.ble-connecte {
-            background: #1a3a3a;
-            color: #00ffcc;
-            border: 1px solid #00ffcc;
-            box-shadow: none;
-        }
-
-        /* Style quand le système est actif (Bouton d'arrêt) */
-        button.actif {
-            background: #ff3366;
-            color: white;
-            box-shadow: 0 4px 10px rgba(255, 51, 102, 0.2);
-        }
-
-        button:active { 
-            transform: scale(0.98); 
-        }
-
-        button:disabled {
-            background: #444;
-            color: #666;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-
-        .info { 
-            color: #aaa; 
-            font-size: 0.9rem; 
-            text-align: left;
-            margin-top: 5px;
-        }
-        
-        #statut {
-            font-size: 1.1rem;
-            color: #ffcc00;
-            font-weight: 500;
-            margin: 15px 0 5px 0;
-        }
-
-        #moniteurDirect {
-            font-size: 0.9rem;
-            color: #888;
-            margin-bottom: 15px;
-        }
-
-        /* Style de l'accordéon natif */
-        details {
-            width: 100%;
-            text-align: left;
-        }
-        summary {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #aaa;
-            list-style: none;
-            outline: none;
-        }
-        summary::-webkit-details-marker {
-            display: none;
-        }
-        .chevron {
-            font-size: 1rem;
-            color: #00ffcc;
-            transition: transform 0.2s ease;
-        }
-        details[open] .chevron {
-            transform: rotate(180deg);
-        }
-        .details-content {
-            margin-top: 15px;
-        }
+        /* Accordéon natif */
+        details { width: 100%; text-align: left; }
+        summary { display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 1.2rem; font-weight: bold; color: #aaa; list-style: none; outline: none; }
+        summary::-webkit-details-marker { display: none; }
+        .chevron { font-size: 1rem; color: #00ffcc; transition: transform 0.2s ease; }
+        details[open] .chevron { transform: rotate(180deg); }
+        .details-content { margin-top: 15px; }
 
         /* Historique */
         .liste-historique { list-style: none; padding: 0; margin: 15px 0 0 0; text-align: left; }
         .liste-historique li { 
-            padding: 14px; 
-            background: #2a2a2a; 
-            margin-bottom: 8px; 
-            border-radius: 8px; 
-            display: flex; 
-            justify-content: space-between; 
-            font-size: 1rem;
-            border-left: 5px solid #00ffcc; 
+            padding: 14px; background: #2a2a2a; margin-bottom: 8px; border-radius: 8px; 
+            display: flex; justify-content: space-between; font-size: 1rem; border-left: 5px solid #00ffcc; 
         }
         .liste-historique li:first-child { background: #333; font-weight: bold; border-left-color: #ff3366; }
     </style>
@@ -243,9 +103,9 @@
         
         <div class="stats-container">
             <div class="score-box">
-                <div class="score-label">Dernier Coup</div>
-                <div class="score" id="affichageScore">0<span>kg</span></div>
-                <div class="sub-val" id="subScoreAcc">0 m/s²</div>
+                <div class="score-label">Impact (Score)</div>
+                <div class="score" id="affichageScore">0</div>
+                <div class="sub-val" id="subScoreAcc">0.0 G</div>
             </div>
             <div class="score-box" style="border-left: 1px solid #333; border-right: 1px solid #333;">
                 <div class="score-label">⏱️ Réaction</div>
@@ -254,15 +114,15 @@
             </div>
             <div class="score-box">
                 <div class="score-label">🏆 Record</div>
-                <div class="record" id="affichageRecord">0<span>kg</span></div>
-                <div class="sub-val" id="subRecordAcc">0 m/s²</div>
+                <div class="record" id="affichageRecord">0</div>
+                <div class="sub-val" id="subRecordAcc">0.0 G</div>
             </div>
         </div>
 
         <p id="statut">Capteur BWT901CL non connecté.</p>
-        <div id="moniteurDirect">Direct : <span id="valeurDirect" style="color: #ffcc00; font-weight: bold;">0.0</span> m/s²</div>
+        <div id="moniteurDirect">Direct : <span id="valeurDirect" style="color: #ffcc00; font-weight: bold;">0.0</span> G</div>
         
-        <button id="btnBluetooth" class="ble-btn">CONNECTER BWT901CL</button>
+        <button id="btnBluetooth" class="ble-btn">CONNECTER CAPTEUR</button>
         <button id="btnConfiguration" disabled>DÉMARRER</button>
     </div>
 
@@ -276,7 +136,7 @@
     <div class="card">
         <details>
             <summary>
-                <span>⚙️ Réglages & Sensibilité</span>
+                <span>⚙️ Mode & Sensibilité</span>
                 <span class="chevron">▼</span>
             </summary>
             <div class="details-content">
@@ -291,89 +151,53 @@
                 <div id="wrapperCombo" style="display: none;">
                     <label for="selectNbCoupsCombo">Nombre de coups du combo :</label>
                     <select id="selectNbCoupsCombo">
-                        <option value="1">1 coup</option>
                         <option value="2">2 coups</option>
                         <option value="3" selected>3 coups</option>
                         <option value="4">4 coups</option>
                         <option value="5">5 coups</option>
-                        <option value="6">6 coups</option>
                     </select>
                 </div>
 
-                <label for="selectEmplacement">Emplacement du capteur :</label>
-                <select id="selectEmplacement">
-                    <option value="poignet" selected>Fixé au Poignet / Gant</option>
-                    <option value="cible">Fixé directement sur la Cible</option>
-                </select>
-
-                <label for="selectSupport">Support utilisé :</label>
-                <select id="selectSupport">
-                    <option value="sac">Sac Suspendu (Mobile)</option>
-                    <option value="mur" selected>Cible Murale / Mousse (Fixe)</option>
-                </select>
-
-                <label for="selectNiveau">Niveau du boxeur (Transfert de masse) :</label>
-                <select id="selectNiveau">
-                    <option value="0.10">Débutant (10% du poids - Bras isolé)</option>
-                    <option value="0.15">Amateur (15% du poids - Engagé léger)</option>
-                    <option value="0.20" selected>Confirmé (20% du poids - Corps complet)</option>
-                </select>
-
-                <label for="inputPoidsCorps">Votre poids corporel (kg) :</label>
-                <input type="number" id="inputPoidsCorps" value="80" step="1" min="30">
-
-                <label for="inputMasse">Masse effective d'impact calculée (kg) :</label>
-                <input type="number" id="inputMasse" value="16.0" step="0.1" min="0.1" readonly>
-                <div class="info" id="infoMasse" style="margin-bottom: 15px;">Calculée automatiquement au poignet selon votre niveau pour inclure le transfert de masse. Modifiable manuellement si le capteur est sur la cible.</div>
-
-                <label for="sliderSensibilite">Seuil de choc :</label>
-                <input type="range" id="sliderSensibilite" min="10" max="150" value="45">
-                <div class="info">Seuil actuel : <span id="valeurSeuil" style="color: #00ffcc; font-weight:bold;">45</span> m/s²</div>
+                <label for="sliderSensibilite">Seuil de déclenchement du choc (G) :</label>
+                <input type="range" id="sliderSensibilite" min="2" max="15" step="0.5" value="4.0">
+                <div class="info">Seuil actuel : <span id="valeurSeuil" style="color: #00ffcc; font-weight:bold;">4.0</span> G <br><small>Augmentez si le capteur se déclenche juste en bougeant le bras (armement).</small></div>
             </div>
         </details>
     </div>
 
     <script>
-        // Valeurs d'initialisation (s'alignent sur Poignet + Cible Murale par défaut)
-        let seuilDetection = 45; 
-        let dureeFenetreImpact = 35; 
-        let tempsAttenteAntiRebond = 800; 
-        let masseImpact = 16.0;
+        // Configuration de base
+        const GRAVITE = 9.80665;
+        let seuilDetectionG = 4.0; // Seuil en G (1G = 9.81 m/s²). 4G évite les faux positifs d'armement.
+        let dureeFenetreImpact = 40; // Fenêtre très courte pour capter le pic de choc ms
+        let tempsAttenteAntiRebond = 800; // ms avant d'accepter un nouveau coup
         
         let modeActuel = 'libre'; 
         let systemeActif = false; 
         let enTrainDeFrapper = false;
-        let maxImpact = 0;
-        let valeursImpactSequence = []; // Buffer pour lissage de la fenêtre d'impact
-        let recordSessionKg = 0;
+        let maxImpactG = 0; // Stockera le pic d'impact en Force G
+        let recordSessionScore = 0;
         let historiqueCoups = [];
         let compteurCoups = 0;
 
-        // Gestion de la réaction
+        // Gestion de la réaction & combo
         let sequenceEnCours = false;
         let signalDonne = false;
         let tempsSignal = 0;
         let timeoutSignal = null;
-
-        // Gestion du Mode Combo
         let nombreCoupsCombo = 3;
         let coupsRestantsCombo = 0;
         let comboEnCours = false;
 
-        // Variables Web Bluetooth et Buffer
+        // Bluetooth
         let deviceBluetooth = null;
         let caractéristiqueBluetooth = null;
         let decodageBuffer = [];
-
         const WITMOTION_SERVICES = ['0000ffe0-0000-1000-8000-00805f9b34fb', '49535343-fe7d-4ae5-8fa9-9fafd205e455'];
 
+        // DOM Elements
         const slider = document.getElementById('sliderSensibilite');
         const valeurSeuilText = document.getElementById('valeurSeuil');
-        const selectEmplacement = document.getElementById('selectEmplacement');
-        const selectSupport = document.getElementById('selectSupport');
-        const selectNiveau = document.getElementById('selectNiveau');
-        const inputPoidsCorps = document.getElementById('inputPoidsCorps');
-        const inputMasse = document.getElementById('inputMasse');
         const selectMode = document.getElementById('selectMode');
         const wrapperCombo = document.getElementById('wrapperCombo');
         const selectNbCoupsCombo = document.getElementById('selectNbCoupsCombo');
@@ -391,78 +215,17 @@
         const btnBluetooth = document.getElementById('btnBluetooth');
 
         slider.addEventListener('input', (e) => {
-            seuilDetection = parseFloat(e.target.value);
-            valeurSeuilText.innerText = seuilDetection;
+            seuilDetectionG = parseFloat(e.target.value);
+            valeurSeuilText.innerText = seuilDetectionG.toFixed(1);
         });
-
-        inputMasse.addEventListener('input', (e) => {
-            let val = parseFloat(e.target.value);
-            if (!isNaN(val) && val > 0) masseImpact = val;
-        });
-
-        inputPoidsCorps.addEventListener('input', actualiserConfigurationPhysique);
-        selectNiveau.addEventListener('change', actualiserConfigurationPhysique);
-
-        // --- MATRICE DE CONFIGURATION DYNAMIQUE BIOMÉCANIQUE AVANCÉE ---
-        function actualiserConfigurationPhysique() {
-            const emplacement = selectEmplacement.value;
-            const support = selectSupport.value;
-            const poidsCorps = parseFloat(inputPoidsCorps.value) || 80;
-            const ratioNiveau = parseFloat(selectNiveau.value) || 0.20;
-
-            if (emplacement === 'poignet') {
-                inputMasse.readOnly = true;
-                let masseEffectiveBase = poidsCorps * ratioNiveau; 
-
-                if (support === 'sac') {
-                    dureeFenetreImpact = 100;    
-                    tempsAttenteAntiRebond = 1200; 
-                    slider.value = 35;             
-                    inputMasse.value = (masseEffectiveBase * 0.85).toFixed(1); 
-                } else if (support === 'mur') {
-                    dureeFenetreImpact = 35;     
-                    tempsAttenteAntiRebond = 800;  
-                    slider.value = 45;             
-                    // Application d'un coefficient d'atténuation de structure indéformable (0.7)
-                    // pour compenser le retour d'onde rigide gant/mur fixe
-                    inputMasse.value = (masseEffectiveBase * 0.70).toFixed(1);
-                }
-            } else if (emplacement === 'cible') {
-                inputMasse.readOnly = false; 
-                if (support === 'sac') {
-                    dureeFenetreImpact = 100;    
-                    tempsAttenteAntiRebond = 1000; 
-                    slider.value = 15;             
-                    inputMasse.value = "8.0";
-                } else if (support === 'mur') {
-                    dureeFenetreImpact = 35;     
-                    tempsAttenteAntiRebond = 500;  
-                    slider.value = 12;             
-                    inputMasse.value = "1.5";
-                }
-            }
-
-            seuilDetection = parseFloat(slider.value);
-            valeurSeuilText.innerText = seuilDetection;
-            masseImpact = parseFloat(inputMasse.value);
-        }
-
-        selectEmplacement.addEventListener('change', actualiserConfigurationPhysique);
-        selectSupport.addEventListener('change', actualiserConfigurationPhysique);
 
         selectMode.addEventListener('change', (e) => {
             modeActuel = e.target.value;
-            if (modeActuel === 'combo') {
-                wrapperCombo.style.display = 'block';
-            } else {
-                wrapperCombo.style.display = 'none';
-            }
+            wrapperCombo.style.display = (modeActuel === 'combo') ? 'block' : 'none';
             arreterSysteme();
         });
 
-        selectNbCoupsCombo.addEventListener('change', (e) => {
-            nombreCoupsCombo = parseInt(e.target.value);
-        });
+        selectNbCoupsCombo.addEventListener('change', (e) => { nombreCoupsCombo = parseInt(e.target.value); });
 
         function annoncerTexte(texte) {
             let message = new SpeechSynthesisUtterance(texte);
@@ -471,15 +234,13 @@
             window.speechSynthesis.speak(message);
         }
 
-        // --- GESTION DU BLUETOOTH WITH CHECKSUM ---
+        // --- BLUETOOTH CONNEXION ---
         btnBluetooth.addEventListener('click', async () => {
             if (deviceBluetooth && deviceBluetooth.gatt.connected) {
-                deviceBluetooth.gatt.disconnect();
-                return;
+                deviceBluetooth.gatt.disconnect(); return;
             }
-
             try {
-                statut.innerText = "Recherche du BWT901CL...";
+                statut.innerText = "Recherche du capteur...";
                 statut.style.color = "#ffcc00";
 
                 deviceBluetooth = await navigator.bluetooth.requestDevice({
@@ -487,39 +248,30 @@
                     optionalServices: WITMOTION_SERVICES
                 });
 
-                statut.innerText = "Connexion au capteur...";
                 const server = await deviceBluetooth.gatt.connect();
-
-                statut.innerText = "Recherche des flux de données...";
                 let service = null;
-                
                 for (const uuid of WITMOTION_SERVICES) {
-                    try {
-                        service = await server.getPrimaryService(uuid);
-                        if (service) break;
-                    } catch (e) { /* continue */ }
+                    try { service = await server.getPrimaryService(uuid); if (service) break; } 
+                    catch (e) {}
                 }
-
                 if (!service) throw new Error("Service GATT introuvable.");
 
                 const characteristics = await service.getCharacteristics();
                 caractéristiqueBluetooth = characteristics.find(c => c.properties.notify);
-
-                if (!caractéristiqueBluetooth) throw new Error("Flux de notification introuvable.");
+                if (!caractéristiqueBluetooth) throw new Error("Flux introuvable.");
 
                 await caractéristiqueBluetooth.startNotifications();
                 caractéristiqueBluetooth.addEventListener('characteristicvaluechanged', accumulerEtFiltrerTrame);
                 deviceBluetooth.addEventListener('gattserverdisconnected', onBluetoothDisconnected);
 
-                statut.innerText = "BWT901CL Connecté. Cliquez sur DÉMARRER !";
+                statut.innerText = "Capteur Connecté ! Cliquez sur DÉMARRER.";
                 statut.style.color = "#00ffcc";
-                btnBluetooth.innerText = "DÉCONNECTER LE CAPTEUR";
+                btnBluetooth.innerText = "DÉCONNECTER CAPTEUR";
                 btnBluetooth.classList.add('ble-connecte');
                 btnConfig.disabled = false;
 
             } catch (error) {
-                console.error(error);
-                statut.innerText = "Erreur de connexion : " + error.message;
+                statut.innerText = "Erreur : " + error.message;
                 statut.style.color = "#ff3366";
                 if (deviceBluetooth) deviceBluetooth.gatt.disconnect();
             }
@@ -529,7 +281,7 @@
             statut.innerText = "Capteur déconnecté.";
             statut.style.color = "#ff3366";
             valeurDirect.innerText = "0.0";
-            btnBluetooth.innerText = "CONNECTER BWT901CL";
+            btnBluetooth.innerText = "CONNECTER CAPTEUR";
             btnBluetooth.classList.remove('ble-connecte');
             btnConfig.disabled = true;
             arreterSysteme();
@@ -540,98 +292,83 @@
             return val & 0x8000 ? val - 65536 : val;
         }
 
+        // --- DECODAGE WITMOTION ---
         function accumulerEtFiltrerTrame(event) {
             const value = event.target.value;
-            for (let i = 0; i < value.byteLength; i++) {
-                decodageBuffer.push(value.getUint8(i));
-            }
+            for (let i = 0; i < value.byteLength; i++) { decodageBuffer.push(value.getUint8(i)); }
 
             while (decodageBuffer.length >= 11) {
-                if (decodageBuffer[0] !== 0x55) {
-                    decodageBuffer.shift();
-                    continue;
-                }
-
+                if (decodageBuffer[0] !== 0x55) { decodageBuffer.shift(); continue; }
                 const flagPaquet = decodageBuffer[1];
 
-                if (flagPaquet === 0x51 || flagPaquet === 0x52 || flagPaquet === 0x53 || flagPaquet === 0x54) {
-                    
-                    let checksumCalcule = 0;
-                    for (let i = 0; i < 10; i++) {
-                        checksumCalcule += decodageBuffer[i];
-                    }
-                    checksumCalcule = checksumCalcule & 0xFF;
-
-                    if (checksumCalcule !== decodageBuffer[10]) {
-                        decodageBuffer.shift();
-                        continue;
-                    }
-
-                    if (flagPaquet === 0x51) {
-                        const axRaw = convertirEnInt16(decodageBuffer[2], decodageBuffer[3]);
-                        const ayRaw = convertirEnInt16(decodageBuffer[4], decodageBuffer[5]);
-                        const azRaw = convertirEnInt16(decodageBuffer[6], decodageBuffer[7]);
-
-                        analyserAccelerationBrute(axRaw, ayRaw, azRaw);
-                    }
-
-                    decodageBuffer.splice(0, 11);
-                } 
-                else if (flagPaquet === 0x61) {
-                    if (decodageBuffer.length < 20) break; 
+                if (flagPaquet === 0x51) {
+                    let checksum = 0;
+                    for (let i = 0; i < 10; i++) checksum += decodageBuffer[i];
+                    if ((checksum & 0xFF) !== decodageBuffer[10]) { decodageBuffer.shift(); continue; }
 
                     const axRaw = convertirEnInt16(decodageBuffer[2], decodageBuffer[3]);
                     const ayRaw = convertirEnInt16(decodageBuffer[4], decodageBuffer[5]);
                     const azRaw = convertirEnInt16(decodageBuffer[6], decodageBuffer[7]);
-
+                    
+                    analyserAccelerationBrute(axRaw, ayRaw, azRaw);
+                    decodageBuffer.splice(0, 11);
+                } 
+                else if (flagPaquet === 0x61 && decodageBuffer.length >= 20) {
+                    const axRaw = convertirEnInt16(decodageBuffer[2], decodageBuffer[3]);
+                    const ayRaw = convertirEnInt16(decodageBuffer[4], decodageBuffer[5]);
+                    const azRaw = convertirEnInt16(decodageBuffer[6], decodageBuffer[7]);
+                    
                     analyserAccelerationBrute(axRaw, ayRaw, azRaw);
                     decodageBuffer.splice(0, 20); 
                 } 
                 else {
+                    if(flagPaquet !== 0x61 || (flagPaquet === 0x61 && decodageBuffer.length < 20)) break;
                     decodageBuffer.shift();
                 }
             }
         }
 
+        // --- ANALYSE DE L'ACCÉLÉRATION EN G ---
         function analyserAccelerationBrute(axRaw, ayRaw, azRaw) {
-            const ax = (axRaw / 32768.0) * 16.0 * 9.80665;
-            const ay = (ayRaw / 32768.0) * 16.0 * 9.80665;
-            const az = (azRaw / 32768.0) * 16.0 * 9.80665;
+            // Conversion Witmotion (Plage 16G max)
+            const ax_G = (axRaw / 32768.0) * 16.0;
+            const ay_G = (ayRaw / 32768.0) * 16.0;
+            const az_G = (azRaw / 32768.0) * 16.0;
 
-            const magnitudeTotale = Math.sqrt(ax**2 + ay**2 + az**2);
+            const magnitude_G = Math.sqrt(ax_G**2 + ay_G**2 + az_G**2);
+            
+            // Retrait de la gravité (1G)
+            let forceNetteG = magnitude_G - 1.0;
+            if (forceNetteG < 0) forceNetteG = 0;
 
-            let forceLineaire = magnitudeTotale - 9.80665;
-            if (forceLineaire < 0) forceLineaire = 0;
-
-            valeurDirect.innerText = forceLineaire.toFixed(1);
-
+            valeurDirect.innerText = forceNetteG.toFixed(1);
             if (!systemeActif) return;
-
-            traiterAnalyseImpact(forceLineaire);
+            traiterAnalyseImpact(forceNetteG);
         }
 
-        // --- MOTEUR DE TRAITEMENT ET CONVERSION FORCE (KG) AVEC LISSAGE ---
-        function traiterAnalyseImpact(forceInstantanee) {
+        // --- GESTION DU CHOC ET CALCUL DU SCORE ---
+        function traiterAnalyseImpact(forceInstantaneeG) {
+            // Gestion du faux départ
             if (modeActuel === 'reaction' && sequenceEnCours && !signalDonne) {
-                if (forceInstantanee > seuilDetection) {
+                if (forceInstantaneeG > seuilDetectionG) {
                     clearTimeout(timeoutSignal);
                     sequenceEnCours = false;
                     statut.innerText = "❌ FAUX DÉPART !";
                     statut.style.color = "#ff3366";
                     annoncerTexte("Faux départ");
-                    
-                    setTimeout(() => {
-                        if (systemeActif && modeActuel === 'reaction') lancerSequenceReaction();
-                    }, 2000);
+                    setTimeout(() => { if (systemeActif && modeActuel === 'reaction') lancerSequenceReaction(); }, 2000);
                 }
                 return; 
             }
 
+            // Détection du choc
             if (modeActuel === 'libre' || (modeActuel === 'reaction' && signalDonne) || (modeActuel === 'combo' && comboEnCours)) {
-                if (!enTrainDeFrapper && forceInstantanee > seuilDetection) {
+                
+                // Si la force dépasse le seuil, on déclenche l'enregistrement du coup
+                if (!enTrainDeFrapper && forceInstantaneeG > seuilDetectionG) {
                     enTrainDeFrapper = true;
-                    maxImpact = forceInstantanee;
-                    valeursImpactSequence = [forceInstantanee]; // On commence à stocker les accélérations du choc
+                    maxImpactG = forceInstantaneeG;
+                    
                     statut.innerText = "💥 IMPACT !";
                     statut.style.color = "#ff3366";
 
@@ -640,75 +377,56 @@
                         tempsReactionCalcule = (performance.now() - tempsSignal) / 1000;
                     }
 
+                    // Fenêtre de mesure (cherche le pic maximal pendant quelques millisecondes)
                     setTimeout(() => {
-                        // Lissage : Calcul de l'accélération moyenne sur la durée totale de la fenêtre d'impact
-                        let sommeAcc = 0;
-                        for (let i = 0; i < valeursImpactSequence.length; i++) {
-                            sommeAcc += valeursImpactSequence[i];
-                        }
-                        let accMoyenneLissee = valeursImpactSequence.length > 0 ? (sommeAcc / valeursImpactSequence.length) : maxImpact;
+                        // Calcul d'un Score Arbitraire basé sur les G. 
+                        // Ex: 10 G = Score de 450. On utilise un multiplicateur de 45 pour un côté fun.
+                        let scoreImpact = Math.round(maxImpactG * 45); 
 
-                        // Calcul de la force réelle basée sur l'accélération moyenne lissée (absorbe le pic vibratoire structurel)
-                        let forceKilosBrute = (masseImpact * accMoyenneLissee) / 9.80665;
-                        let scoreKgArrondi = Math.round(forceKilosBrute);
-                        let accBruteArrondie = Math.round(maxImpact); // On garde l'affichage de la crête maximale en m/s²
-
-                        affichageScore.innerHTML = `${scoreKgArrondi}<span style="font-size:1.2rem; color:#888; font-weight:normal;"> kg</span>`;
-                        subScoreAcc.innerText = `${accBruteArrondie} m/s²`;
+                        affichageScore.innerText = scoreImpact;
+                        subScoreAcc.innerText = maxImpactG.toFixed(1) + " G";
                         
-                        if (modeActuel === 'reaction' || modeActuel === 'combo') {
-                            affichageReaction.innerText = tempsReactionCalcule.toFixed(3) + "s";
-                        } else {
-                            affichageReaction.innerText = "-.---s";
-                        }
+                        affichageReaction.innerText = (modeActuel === 'libre') ? "-.---s" : tempsReactionCalcule.toFixed(3) + "s";
                         
-                        if (scoreKgArrondi > recordSessionKg) {
-                            recordSessionKg = scoreKgArrondi;
-                            affichageRecord.innerHTML = `${recordSessionKg}<span style="font-size:1.2rem; color:#888; font-weight:normal;"> kg</span>`;
-                            subRecordAcc.innerText = `${accBruteArrondie} m/s²`;
-                            if (modeActuel !== 'combo') annoncerTexte("Record " + scoreKgArrondi + " kilos");
-                        } else {
-                            if (modeActuel !== 'combo') annoncerTexte(scoreKgArrondi + " kilos");
+                        // Nouveau Record
+                        if (scoreImpact > recordSessionScore) {
+                            recordSessionScore = scoreImpact;
+                            affichageRecord.innerText = recordSessionScore;
+                            subRecordAcc.innerText = maxImpactG.toFixed(1) + " G";
+                            if (modeActuel !== 'combo') annoncerTexte("Record !");
                         }
 
+                        // Historique
                         compteurCoups++;
                         historiqueCoups.unshift({
                             numero: compteurCoups,
-                            kilos: scoreKgArrondi,
-                            acceleration: accBruteArrondie,
-                            reaction: (modeActuel === 'reaction' || modeActuel === 'combo') ? tempsReactionCalcule.toFixed(3) : null
+                            score: scoreImpact,
+                            gforce: maxImpactG.toFixed(1),
+                            reaction: (modeActuel === 'libre') ? null : tempsReactionCalcule.toFixed(3)
                         });
-
-                        if (historiqueCoups.length > 5) {
-                            historiqueCoups.pop();
-                        }
+                        if (historiqueCoups.length > 5) historiqueCoups.pop();
                         
-                        listeHistorique.innerHTML = historiqueCoups.map((coup) => {
-                            let details = `${coup.kilos} kg (${coup.acceleration} m/s²)`;
-                            if (coup.reaction) details += ` / ⏱️ ${coup.reaction}s`;
-                            return `<li><span>Coup n°${coup.numero}</span> <b>${details}</b></li>`;
+                        listeHistorique.innerHTML = historiqueCoups.map((c) => {
+                            let details = `Score: ${c.score} (${c.gforce} G)`;
+                            if (c.reaction) details += ` / ⏱️ ${c.reaction}s`;
+                            return `<li><span>Coup n°${c.numero}</span> <b>${details}</b></li>`;
                         }).join('');
 
+                        // Anti-rebond et préparation au coup suivant
                         setTimeout(() => {
                             enTrainDeFrapper = false;
-                            valeursImpactSequence = [];
                             if (systemeActif) {
                                 if (modeActuel === 'libre') {
-                                    statut.innerText = "En attente du coup suivant...";
-                                    statut.style.color = "#00ffcc";
+                                    statut.innerText = "En attente du coup suivant..."; statut.style.color = "#00ffcc";
                                 } else if (modeActuel === 'reaction') {
                                     lancerSequenceReaction();
                                 } else if (modeActuel === 'combo') {
                                     coupsRestantsCombo--;
-                                    if (coupsRestantsCombo > 0) {
-                                        annoncerProchainCoupCombo();
-                                    } else {
-                                        statut.innerText = "Enchaînement terminé !";
-                                        statut.style.color = "#00ffcc";
-                                        annoncerTexte("Enchaînement terminé");
-                                        setTimeout(() => {
-                                            if (systemeActif && modeActuel === 'combo') lancerSequenceCombo();
-                                        }, 2500);
+                                    if (coupsRestantsCombo > 0) annoncerProchainCoupCombo();
+                                    else {
+                                        statut.innerText = "Enchaînement terminé !"; statut.style.color = "#00ffcc";
+                                        annoncerTexte("Terminé");
+                                        setTimeout(() => { if (systemeActif) lancerSequenceCombo(); }, 2500);
                                     }
                                 }
                             }
@@ -717,112 +435,70 @@
                     }, dureeFenetreImpact);
                 } 
                 else if (enTrainDeFrapper) {
-                    // Accumulation continue de toutes les trames reçues à 200 Hz durant la fenêtre d'impact
-                    valeursImpactSequence.push(forceInstantanee);
-                    if (forceInstantanee > maxImpact) {
-                        maxImpact = forceInstantanee;
-                    }
+                    // Si on est dans la fenêtre d'impact, on retient le plus haut pic de décélération
+                    if (forceInstantaneeG > maxImpactG) maxImpactG = forceInstantaneeG;
                 }
             }
         }
 
+        // --- CONTRÔLES PRINCIPAUX ---
         btnConfig.addEventListener('click', () => {
-            if (!deviceBluetooth || !deviceBluetooth.gatt.connected) {
-                statut.innerText = "❌ Capteur Bluetooth non connecté.";
-                statut.style.color = "#ff3366";
-                return;
-            }
+            if (!deviceBluetooth || !deviceBluetooth.gatt.connected) return;
 
             if (!systemeActif) {
                 systemeActif = true;
-                decodageBuffer = [];
-                valeursImpactSequence = [];
                 btnConfig.innerText = "ARRÊTER";
                 btnConfig.classList.add('actif');
 
                 if (modeActuel === 'libre') {
                     annoncerTexte("C'est parti");
-                    statut.innerText = "Analyse en cours... Frappez !";
-                    statut.style.color = "#00ffcc";
+                    statut.innerText = "Analyse en cours... Frappez !"; statut.style.color = "#00ffcc";
                 } else if (modeActuel === 'reaction') {
                     lancerSequenceReaction();
                 } else if (modeActuel === 'combo') {
                     lancerSequenceCombo();
                 }
-            } else {
-                arreterSysteme();
-            }
+            } else { arreterSysteme(); }
         });
 
         function arreterSysteme() {
-            systemeActif = false;
-            sequenceEnCours = false;
-            signalDonne = false;
-            enTrainDeFrapper = false;
-            comboEnCours = false;
-            valeursImpactSequence = [];
+            systemeActif = false; sequenceEnCours = false; signalDonne = false; enTrainDeFrapper = false; comboEnCours = false;
             if (timeoutSignal) clearTimeout(timeoutSignal);
-            
-            btnConfig.innerText = "DÉMARRER";
-            btnConfig.classList.remove('actif');
-            
+            btnConfig.innerText = "DÉMARRER"; btnConfig.classList.remove('actif');
             if (deviceBluetooth && deviceBluetooth.gatt.connected) {
-                if (modeActuel === 'libre') statut.innerText = "Prêt à démarrer.";
-                else if (modeActuel === 'reaction') statut.innerText = "Prêt pour le test de réaction.";
-                else statut.innerText = "Prêt pour le mode combo.";
-            } else {
-                statut.innerText = "Capteur BWT901CL non connecté.";
+                statut.innerText = "Prêt à démarrer.";
             }
             statut.style.color = "#00ffcc";
         }
 
         function lancerSequenceReaction() {
             if (!systemeActif) return;
-
-            sequenceEnCours = true;
-            signalDonne = false;
-            enTrainDeFrapper = false;
-            
-            statut.innerText = "Attendez le signal...";
-            statut.style.color = "#ffcc00";
-            
-            let delaiAleatoire = 1500 + Math.random() * 3500;
+            sequenceEnCours = true; signalDonne = false; enTrainDeFrapper = false;
+            statut.innerText = "Attendez le signal..."; statut.style.color = "#ffcc00";
             
             timeoutSignal = setTimeout(() => {
                 if (!systemeActif || !sequenceEnCours) return; 
-                
-                signalDonne = true;
-                tempsSignal = performance.now();
-                statut.innerText = "💥 GO ! FRAPPEZ !";
-                statut.style.color = "#00ff33"; 
+                signalDonne = true; tempsSignal = performance.now();
+                statut.innerText = "💥 GO ! FRAPPEZ !"; statut.style.color = "#00ff33"; 
                 annoncerTexte("Allez");
-            }, delaiAleatoire);
+            }, 1500 + Math.random() * 3500);
         }
 
         function lancerSequenceCombo() {
             if (!systemeActif) return;
-            comboEnCours = true;
-            coupsRestantsCombo = nombreCoupsCombo;
-            statut.innerText = "Préparez-vous...";
-            statut.style.color = "#ffcc00";
-            
-            setTimeout(() => {
-                if (!systemeActif || !comboEnCours) return;
-                annoncerProchainCoupCombo();
-            }, 1500);
+            comboEnCours = true; coupsRestantsCombo = nombreCoupsCombo;
+            statut.innerText = "Préparez-vous..."; statut.style.color = "#ffcc00";
+            setTimeout(() => { if (systemeActif && comboEnCours) annoncerProchainCoupCombo(); }, 1500);
         }
 
         function annoncerProchainCoupCombo() {
-            let chiffreAleatoire = Math.floor(Math.random() * 6) + 1;
+            let chiffre = Math.floor(Math.random() * 6) + 1;
             let coupIndex = nombreCoupsCombo - coupsRestantsCombo + 1;
-            statut.innerText = `🔥 CIBLE : Chiffre ${chiffreAleatoire} (${coupIndex}/${nombreCoupsCombo})`;
+            statut.innerText = `🔥 CIBLE : Chiffre ${chiffre} (${coupIndex}/${nombreCoupsCombo})`;
             statut.style.color = "#00ff33";
-            
             tempsSignal = performance.now(); 
-            annoncerTexte(chiffreAleatoire.toString());
+            annoncerTexte(chiffre.toString());
         }
-
-        actualiserConfigurationPhysique();
     </script>
 </body>
 </html>
