@@ -193,7 +193,8 @@
         let deviceBluetooth = null;
         let caractéristiqueBluetooth = null;
         let decodageBuffer = [];
-        const WITMOTION_SERVICES = ['0000ffe0-0000-1000-8000-00805f9b34fb', '49535343-fe7d-4ae5-8fa9-9fafd205e455'];
+        // AJOUT DE L'UUID FFE5 POUR WITMOTION BLE
+        const WITMOTION_SERVICES = ['0000ffe5-0000-1000-8000-00805f9b34fb', '0000ffe0-0000-1000-8000-00805f9b34fb', '49535343-fe7d-4ae5-8fa9-9fafd205e455'];
 
         // DOM Elements
         const slider = document.getElementById('sliderSensibilite');
@@ -294,6 +295,9 @@
 
         // --- DECODAGE WITMOTION ---
         function accumulerEtFiltrerTrame(event) {
+            // Décommentez la ligne ci-dessous si vous souhaitez déboguer la réception dans la console (touche F12)
+            // console.log("Octets reçus :", event.target.value.byteLength);
+            
             const value = event.target.value;
             for (let i = 0; i < value.byteLength; i++) { decodageBuffer.push(value.getUint8(i)); }
 
